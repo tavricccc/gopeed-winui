@@ -16,6 +16,8 @@ namespace Gopeed_Native;
 /// </summary>
 public partial class App : Application
 {
+    private AppInstance? registeredInstance;
+    private readonly HashSet<Views.DownloadWindow> downloadWindows = [];
     /// <summary>
     /// The main application window. Use <c>App.Window</c> from any class that needs
     /// the window reference (for dialogs, pickers, interop, etc.).
@@ -63,11 +65,12 @@ public partial class App : Application
             Exit(); return;
         }
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        registeredInstance = instance;
         instance.Activated += (_, activation) => DispatcherQueue.TryEnqueue(() => HandleActivation(activation));
         HandleActivation(AppInstance.GetCurrent().GetActivatedEventArgs());
     }
 
-    private async void HandleActivation(AppActivationArguments activation)
+    private void HandleActivation(AppActivationArguments activation)
     {
         try
         {
@@ -77,9 +80,9 @@ public partial class App : Application
                 if (match.Success)
                 {
                     var path = System.IO.Path.Combine(Services.CoreClient.DataDirectory, "pending-downloads", match.Groups[1].Value + ".json");
-                    var request = System.Text.Json.Nodes.JsonNode.Parse(await System.IO.File.ReadAllTextAsync(path))!.AsObject();
+                    var request = System.Text.Json.Nodes.JsonNode.Parse(System.IO.File.ReadAllText(path))!.AsObject();
                     System.IO.File.Delete(path);
-                    new Views.DownloadWindow(request).Activate(); return;
+                    OpenDownloadWindow(request); return;
                 }
             }
             var link = activation.Data switch
@@ -90,7 +93,7 @@ public partial class App : Application
             };
             if (link is not null && Services.GopeedLink.Parse(link) is { Route: "create" } create)
             {
-                new Views.DownloadWindow(create.Parameters ?? new System.Text.Json.Nodes.JsonObject()).Activate(); return;
+                OpenDownloadWindow(create.Parameters ?? new System.Text.Json.Nodes.JsonObject()); return;
             }
             EnsureMainWindow().Activate();
             if (link is not null) ((MainWindow)Window).OpenProtocol(link);
@@ -102,7 +105,18 @@ public partial class App : Application
     }
     private MainWindow EnsureMainWindow()
     {
-        if (Window is null) { Window = new MainWindow(); Window.Closed += (_, _) => Window = null!; }
+        if (Window is null) { Window = new MainWindow(); Window.Closed += (_, _) => { Window = null!; ReleaseRegistration(); }; }
         return (MainWindow)Window;
+    }
+    private void OpenDownloadWindow(System.Text.Json.Nodes.JsonObject request)
+    {
+        var window = new Views.DownloadWindow(request);
+        downloadWindows.Add(window);
+        window.Closed += (_, _) => { downloadWindows.Remove(window); ReleaseRegistration(); };
+        window.Activate();
+    }
+    private void ReleaseRegistration()
+    {
+        if (Window is null && downloadWindows.Count == 0) registeredInstance?.UnregisterKey();
     }
 }
