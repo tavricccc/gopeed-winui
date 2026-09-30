@@ -2,7 +2,7 @@
  <ScrollViewer MaxHeight="500"><StackPanel Spacing="14" MinWidth="420">
   <InfoBar x:Name="Message" Severity="Error" IsOpen="False" IsClosable="False"/>
   <TextBox x:Name="Links" Header="網址或磁力連結" PlaceholderText="貼上連結；批次下載請每行一個" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" MaxHeight="150" AutomationProperties.AutomationId="DownloadLinks" TextChanged="InputChanged"/>
-  <Button Content="選擇 torrent 檔案" Click="PickTorrent"/>
+  <Button x:Name="TorrentPickerButton" Content="選擇 torrent 檔案" Click="PickTorrent"/>
   <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="Destination" Header="儲存位置" AutomationProperties.AutomationId="DownloadDestination"/><Button Grid.Column="1" Content="瀏覽…" Click="PickFolder" VerticalAlignment="Bottom"/></Grid>
   <TextBox x:Name="FileName" Header="檔名（單一檔案，可留空）" PlaceholderText="使用伺服器提供的名稱"/>
   <Expander Header="請求選項" HorizontalAlignment="Stretch"><StackPanel Spacing="12"><NumberBox x:Name="Connections" Header="連線數" Value="8" Minimum="1" Maximum="64" SpinButtonPlacementMode="Compact"/><TextBox x:Name="Headers" Header="HTTP 標頭" PlaceholderText="每行一個，例如 Referer: https://example.com" AcceptsReturn="True" TextWrapping="Wrap" Height="90"/></StackPanel></Expander>

@@ -64,6 +64,7 @@ public partial class App : Application
             Exit(); return;
         }
         Window = new MainWindow();
+        Window.Closed += (_, _) => Window = null!;
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         instance.Activated += (_, activation) => DispatcherQueue.TryEnqueue(() => HandleActivation(activation));
         Window.Activate();
@@ -72,6 +73,7 @@ public partial class App : Application
 
     private void HandleActivation(AppActivationArguments activation)
     {
+        if (Window is null) { Window = new MainWindow(); Window.Closed += (_, _) => Window = null!; }
         Window.Activate();
         var link = activation.Data switch
         {

@@ -14,22 +14,26 @@ public sealed partial class AddDownloadDialog : ContentDialog
  private string? resolved;
  private readonly JsonObject? initial;
  private readonly nint owner;
+ private string lastInput = "";
+ private readonly bool compact;
  public string? CreatedTaskId { get; private set; }
- public AddDownloadDialog(CoreClient core, JsonObject? initial = null, nint? owner = null)
+ public AddDownloadDialog(CoreClient core, JsonObject? initial = null, nint? owner = null, bool compact = false)
  {
-  this.core = core; this.initial = initial; this.owner = owner ?? App.WindowHandle; InitializeComponent();
+  this.core = core; this.initial = initial; this.owner = owner ?? App.WindowHandle; this.compact = compact; InitializeComponent();
+  if (compact) { Title = "確認下載"; Links.Header = "來源網址"; Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; FileName.Header = "檔名"; }
   Loaded += async (_, _) => { IsPrimaryButtonEnabled = false; try { var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? ""; if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"); ApplyInitial(); if (initial is not null && Links.Text.Length > 0) await InspectAsync(Links.Text); } catch (Exception e) { ShowError(e); } finally { IsPrimaryButtonEnabled = true; } };
  }
  private void ApplyInitial()
  {
   if (initial is null) return;
   Links.Text = initial["req"]?["url"]?.GetValue<string>() ?? "";
+  lastInput = Links.Text;
   if (initial["opts"]?["path"]?.GetValue<string>() is { Length: > 0 } path) Destination.Text = path;
   FileName.Text = initial["opts"]?["name"]?.GetValue<string>() ?? "";
   if (initial["opts"]?["extra"]?["connections"] is JsonValue connections) Connections.Value = connections.GetValue<int>();
   if (initial["req"]?["extra"]?["header"] is JsonObject headers) Headers.Text = string.Join("\n", headers.Select(pair => $"{pair.Key}: {pair.Value}"));
  }
- private void InputChanged(object s, TextChangedEventArgs e) { resolved = null; var count = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length; PrimaryButtonText = count > 1 ? $"開始 {count} 個下載" : "檢查連結"; if (Files is not null) Files.Visibility = Visibility.Collapsed; }
+ private void InputChanged(object s, TextChangedEventArgs e) { if (lastInput == Links.Text) return; lastInput = Links.Text; resolved = null; var count = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length; PrimaryButtonText = count > 1 ? $"開始 {count} 個下載" : "檢查連結"; if (Files is not null) Files.Visibility = Visibility.Collapsed; }
  private async void PickFolder(object s, RoutedEventArgs e)
  {
   var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, owner);
@@ -105,7 +109,7 @@ public sealed partial class AddDownloadDialog : ContentDialog
    var displayName = resource["name"]?.GetValue<string>();
    if (string.IsNullOrEmpty(displayName)) displayName = resource["files"]!.AsArray()[0]!["name"]!.GetValue<string>();
    var size = resource["size"]!.GetValue<long>();
-   Preview.Text = $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
+   Preview.Text = compact ? $"大小：{(size > 0 ? DownloadItem.FormatBytes(size) : "由伺服器於下載時提供")}" : $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
    Files.Items.Clear(); var index = 0;
    foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(new ResolvedFile(index++, Path.Combine(file!["path"]?.GetValue<string>() ?? "", file["name"]!.GetValue<string>())));
    Files.SelectAll(); Files.Visibility = Files.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;

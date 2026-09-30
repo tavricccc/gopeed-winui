@@ -57,7 +57,7 @@ public sealed partial class MainPage : Page
    else
    {
     Navigation.SelectedItem = Navigation.MenuItems.OfType<NavigationViewItem>().First(i => i.Tag?.ToString() == "downloads");
-    if (link.Route == "create") await AddDownloadAsync(link.Parameters);
+    if (link.Route == "create") new DownloadWindow(link.Parameters ?? new System.Text.Json.Nodes.JsonObject()).Activate();
    }
   }
   catch (Exception error) { ViewModel.Error = $"無法開啟 Gopeed 連結：{error.Message}"; }
@@ -71,7 +71,7 @@ public sealed partial class MainPage : Page
    var path = Path.Combine(CoreClient.DataDirectory, "pending-downloads", id + ".json");
    var request = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path))!.AsObject();
    File.Delete(path);
-   new DownloadWindow(ViewModel.Core, request).Activate();
+   new DownloadWindow(request).Activate();
   }
   catch (Exception error) { ViewModel.Error = $"無法開啟下載視窗：{error.Message}"; }
  }
