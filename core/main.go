@@ -80,7 +80,7 @@ func main() {
 		panic(err)
 	}
 	token := string(tokenBytes)
-	port, err := rest.Start(&model.StartConfig{
+	api, apiListener, err := rest.BuildServer(&model.StartConfig{
 		Address: "127.0.0.1:18762", Storage: model.StorageBolt,
 		StorageDir: *root, ApiToken: token, ProductionMode: true,
 		RefreshInterval: 1000,
@@ -88,6 +88,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	port := apiListener.Addr().(*net.TCPAddr).Port
+	api.Handler = browserConfirmation(api.Handler, token, func(body []byte) (string, error) {
+		return openDownloadRequest(*root, *ui, body)
+	})
+	go api.Serve(apiListener)
 	lifecycle := trackLifecycle(rest.Downloader)
 	config, err := rest.Downloader.GetConfig()
 	if err != nil {
@@ -134,7 +139,7 @@ func main() {
 	if err := os.Rename(sessionPath+".tmp", sessionPath); err != nil {
 		panic(err)
 	}
-	defer func() { rest.Stop(); os.Remove(sessionPath) }()
+	defer func() { api.Close(); rest.Stop(); os.Remove(sessionPath) }()
 	fmt.Println("Gopeed Native core ready")
 	if *ui == "" {
 		<-stop
