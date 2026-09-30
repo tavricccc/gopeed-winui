@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Gopeed.Native (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Gopeed.Native (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

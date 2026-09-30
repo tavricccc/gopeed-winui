@@ -1,0 +1,43 @@
+<Page x:Class="Gopeed_Native.MainPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:models="using:Gopeed_Native.Models">
+ <Page.KeyboardAccelerators><KeyboardAccelerator Key="N" Modifiers="Control" Invoked="NewShortcut"/><KeyboardAccelerator Key="F" Modifiers="Control" Invoked="SearchShortcut"/><KeyboardAccelerator Key="F5" Invoked="RefreshShortcut"/></Page.KeyboardAccelerators>
+ <NavigationView x:Name="Navigation" PaneDisplayMode="Top" IsBackButtonVisible="Collapsed" SelectionChanged="NavigationChanged">
+  <NavigationView.MenuItems><NavigationViewItem Content="下載" Tag="downloads" IsSelected="True" Icon="Download"/><NavigationViewItem Content="擴充功能" Tag="extensions" Icon="AllApps"/></NavigationView.MenuItems>
+  <Grid Margin="24,8,24,16" RowSpacing="12">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+   <InfoBar x:Name="ErrorBar" IsOpen="False" Severity="Error" IsClosable="True"/>
+   <Grid x:Name="DownloadsSurface" Grid.Row="1" RowSpacing="14">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel Spacing="4"><TextBlock Text="下載" Style="{ThemeResource TitleTextBlockStyle}"/><TextBlock Text="你的檔案，照自己的步調下載。" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel>
+     <Button Grid.Column="1" Click="AddDownload" Style="{StaticResource AccentButtonStyle}" IsEnabled="{x:Bind ViewModel.IsConnected, Mode=OneWay}" VerticalAlignment="Center" AutomationProperties.AutomationId="AddDownload"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE710;" FontSize="16"/><TextBlock Text="新增下載"/></StackPanel></Button>
+    </Grid>
+    <Grid Grid.Row="1" ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="240"/></Grid.ColumnDefinitions>
+     <ComboBox x:Name="FilterBox" Header="顯示" SelectedIndex="0" SelectionChanged="FilterChanged" MinWidth="160"><ComboBoxItem Content="全部下載" Tag="all"/><ComboBoxItem Content="進行中" Tag="active"/><ComboBoxItem Content="已暫停" Tag="pause"/><ComboBoxItem Content="已完成" Tag="done"/><ComboBoxItem Content="失敗" Tag="error"/></ComboBox>
+     <AutoSuggestBox Grid.Column="1" x:Name="SearchBox" Header="搜尋" PlaceholderText="檔名或網址" QueryIcon="Find" TextChanged="SearchChanged" AutomationProperties.AutomationId="DownloadSearch"/>
+    </Grid>
+    <CommandBar Grid.Row="2" DefaultLabelPosition="Right" Background="{ThemeResource LayerFillColorDefaultBrush}">
+     <AppBarButton Icon="Pause" Label="暫停" Click="PauseSelected" IsEnabled="{x:Bind ViewModel.Selected.CanPause, Mode=OneWay}"/>
+     <AppBarButton Icon="Play" Label="繼續 / 重試" Click="ResumeSelected" IsEnabled="{x:Bind ViewModel.Selected.CanResume, Mode=OneWay}"/>
+     <AppBarSeparator/><AppBarButton Icon="Folder" Label="資料夾" Click="OpenFolder"/><AppBarButton Icon="Info" Label="詳細資訊" Click="ShowDetails"/><AppBarButton Icon="Delete" Label="移除" Click="DeleteSelected"/>
+     <CommandBar.SecondaryCommands><AppBarButton Icon="OpenFile" Label="開啟檔案" Click="OpenSelected"/><AppBarButton Icon="Pause" Label="暫停顯示的下載" Click="PauseAll"/><AppBarButton Icon="Play" Label="繼續顯示的下載" Click="ResumeAll"/><AppBarButton Icon="Refresh" Label="重新整理" Click="RefreshClicked"/></CommandBar.SecondaryCommands>
+    </CommandBar>
+    <Grid Grid.Row="3">
+     <ListView x:Name="DownloadList" ItemsSource="{x:Bind ViewModel.VisibleItems}" SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}" SelectionMode="Single" DoubleTapped="ListDoubleTapped" HorizontalContentAlignment="Stretch" AutomationProperties.AutomationId="DownloadList">
+      <ListView.ItemContainerStyle><Style TargetType="ListViewItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="12"/></Style></ListView.ItemContainerStyle>
+      <ListView.ItemTemplate><DataTemplate x:DataType="models:DownloadItem">
+       <Grid ColumnSpacing="16" RowSpacing="6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="115"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TextBlock Text="{x:Bind Name, Mode=OneWay}" Style="{ThemeResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" HorizontalAlignment="Right"/>
+        <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Value="{x:Bind Percent, Mode=OneWay}" IsIndeterminate="{x:Bind IsIndeterminate, Mode=OneWay}" Maximum="100" MinWidth="0"/>
+        <TextBlock Grid.Row="2" Text="{x:Bind TransferText, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind SpeedText, Mode=OneWay}" HorizontalAlignment="Right" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/>
+        <Grid.ContextFlyout><MenuFlyout><MenuFlyoutItem Text="暫停" Icon="Pause" Click="ContextPause" Tag="{x:Bind Id}"/><MenuFlyoutItem Text="繼續 / 重試" Icon="Play" Click="ContextResume" Tag="{x:Bind Id}"/><MenuFlyoutItem Text="開啟資料夾" Icon="Folder" Click="ContextFolder" Tag="{x:Bind Id}"/><MenuFlyoutSeparator/><MenuFlyoutItem Text="移除" Icon="Delete" Click="ContextDelete" Tag="{x:Bind Id}"/></MenuFlyout></Grid.ContextFlyout>
+       </Grid>
+      </DataTemplate></ListView.ItemTemplate>
+     </ListView>
+     <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" IsHitTestVisible="False"><FontIcon Glyph="&#xE896;" FontSize="40" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="準備好下一個下載" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center"/><TextBlock Text="新增網址、磁力連結或 torrent 檔案。" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/></StackPanel>
+    </Grid>
+    <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{x:Bind ViewModel.Summary, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/><TextBlock Grid.Column="1" Text="關閉視窗仍會繼續下載" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/></Grid>
+   </Grid>
+   <Frame x:Name="SettingsFrame" Grid.Row="1" Visibility="Collapsed"/>
+  </Grid>
+ </NavigationView>
+</Page>
