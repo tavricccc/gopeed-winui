@@ -13,7 +13,8 @@ public static class FileActions
     public static void Reveal(string path, string folder)
     {
         var start = new ProcessStartInfo("explorer.exe") { UseShellExecute = true };
-        start.ArgumentList.Add(File.Exists(path) || Directory.Exists(path) ? "/select," + path : folder);
+        if (File.Exists(path) || Directory.Exists(path)) start.Arguments = $"/select,\"{path}\"";
+        else start.ArgumentList.Add(folder);
         Process.Start(start);
     }
     public static void Copy(string text)
