@@ -80,5 +80,10 @@ public partial class App : Application
             _ => null
         };
         if (link is not null) ((MainWindow)Window).OpenProtocol(link);
+        if (activation.Data is Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs launchArgs)
+        {
+            var request = System.Text.RegularExpressions.Regex.Match(launchArgs.Arguments, @"--download-request\s+([a-f0-9]{32})");
+            if (request.Success) ((MainWindow)Window).OpenDownloadRequest(request.Groups[1].Value);
+        }
     }
 }

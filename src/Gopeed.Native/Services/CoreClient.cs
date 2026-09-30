@@ -48,6 +48,7 @@ public sealed class CoreClient : IDisposable
         }
         http.BaseAddress = new Uri(ApiAddress + "/api/v1/");
         http.DefaultRequestHeaders.Add("X-Api-Token", Token);
+        http.DefaultRequestHeaders.Add("X-Gopeed-Native-Confirmed", "1");
         await GetAsync("info");
     }
 

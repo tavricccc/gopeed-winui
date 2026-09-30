@@ -13,10 +13,12 @@ public sealed partial class AddDownloadDialog : ContentDialog
  private readonly CoreClient core;
  private string? resolved;
  private readonly JsonObject? initial;
- public AddDownloadDialog(CoreClient core, JsonObject? initial = null)
+ private readonly nint owner;
+ public string? CreatedTaskId { get; private set; }
+ public AddDownloadDialog(CoreClient core, JsonObject? initial = null, nint? owner = null)
  {
-  this.core = core; this.initial = initial; InitializeComponent();
-  Loaded += async (_, _) => { try { var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? ""; if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"); ApplyInitial(); } catch (Exception e) { ShowError(e); } };
+  this.core = core; this.initial = initial; this.owner = owner ?? App.WindowHandle; InitializeComponent();
+  Loaded += async (_, _) => { IsPrimaryButtonEnabled = false; try { var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? ""; if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"); ApplyInitial(); if (initial is not null && Links.Text.Length > 0) await InspectAsync(Links.Text); } catch (Exception e) { ShowError(e); } finally { IsPrimaryButtonEnabled = true; } };
  }
  private void ApplyInitial()
  {
@@ -30,12 +32,12 @@ public sealed partial class AddDownloadDialog : ContentDialog
  private void InputChanged(object s, TextChangedEventArgs e) { resolved = null; var count = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length; PrimaryButtonText = count > 1 ? $"開始 {count} 個下載" : "檢查連結"; if (Files is not null) Files.Visibility = Visibility.Collapsed; }
  private async void PickFolder(object s, RoutedEventArgs e)
  {
-  var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, App.WindowHandle);
+  var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, owner);
   var folder = await picker.PickSingleFolderAsync(); if (folder is not null) Destination.Text = folder.Path;
  }
  private async void PickTorrent(object s, RoutedEventArgs e)
  {
-  var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".torrent"); WinRT.Interop.InitializeWithWindow.Initialize(picker, App.WindowHandle);
+  var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".torrent"); WinRT.Interop.InitializeWithWindow.Initialize(picker, owner);
   var file = await picker.PickSingleFileAsync(); if (file is not null) Links.Text = file.Path;
  }
  private JsonObject BuildRequest(string url)
@@ -78,15 +80,7 @@ public sealed partial class AddDownloadDialog : ContentDialog
    }
    else if (resolved is null)
    {
-    var result = (await core.SendAsync(HttpMethod.Post, "resolve", BuildRequest(links[0])))!;
-    resolved = result["id"]!.GetValue<string>(); var resource = result["res"]!;
-    var displayName = resource["name"]?.GetValue<string>();
-    if (string.IsNullOrEmpty(displayName)) displayName = resource["files"]!.AsArray()[0]!["name"]!.GetValue<string>();
-    var size = resource["size"]!.GetValue<long>();
-    Preview.Text = $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
-    Files.Items.Clear(); var index = 0; foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(new ResolvedFile(index++, Path.Combine(file!["path"]?.GetValue<string>() ?? "", file["name"]!.GetValue<string>())));
-    Files.SelectAll(); Files.Visibility = Files.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
-    PrimaryButtonText = "開始下載";
+    await InspectAsync(links[0]);
    }
    else
    {
@@ -94,12 +88,31 @@ public sealed partial class AddDownloadDialog : ContentDialog
     var request = BuildRequest(links[0]);
     request["opts"]!["selectFiles"] = new JsonArray(Files.SelectedItems.Cast<ResolvedFile>().Select(file => JsonValue.Create(file.Index) as JsonNode).ToArray());
     if (Files.Items.Count > 1 && Files.SelectedItems.Count == 0) throw new FormatException("請至少選擇一個檔案。");
-    await core.SendAsync(HttpMethod.Post, "tasks", request); complete = true;
+    CreatedTaskId = (await core.SendAsync(HttpMethod.Post, "tasks", request))!.GetValue<string>(); complete = true;
    }
   }
   catch (Exception e) { ShowError(e); }
   finally { Busy.IsActive = false; Busy.Visibility = Visibility.Collapsed; IsPrimaryButtonEnabled = true; deferral.Complete(); }
   if (complete) Hide();
+ }
+ private async Task InspectAsync(string url)
+ {
+  Busy.Visibility = Visibility.Visible; Busy.IsActive = true;
+  try
+  {
+   var result = (await core.SendAsync(HttpMethod.Post, "resolve", BuildRequest(url)))!;
+   resolved = result["id"]!.GetValue<string>(); var resource = result["res"]!;
+   var displayName = resource["name"]?.GetValue<string>();
+   if (string.IsNullOrEmpty(displayName)) displayName = resource["files"]!.AsArray()[0]!["name"]!.GetValue<string>();
+   var size = resource["size"]!.GetValue<long>();
+   Preview.Text = $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
+   Files.Items.Clear(); var index = 0;
+   foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(new ResolvedFile(index++, Path.Combine(file!["path"]?.GetValue<string>() ?? "", file["name"]!.GetValue<string>())));
+   Files.SelectAll(); Files.Visibility = Files.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+   if (initial is not null && Files.Items.Count == 1 && FileName.Text.Length == 0) FileName.Text = displayName;
+   PrimaryButtonText = "開始下載";
+  }
+  finally { Busy.IsActive = false; Busy.Visibility = Visibility.Collapsed; }
  }
  private void ShowError(Exception e) { Message.Message = e.Message; Message.IsOpen = true; }
  private sealed record ResolvedFile(int Index, string Name) { public override string ToString() => Name; }

@@ -39,6 +39,7 @@ public sealed partial class MainWindow : Window
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(nint hwnd);
     public void OpenProtocol(string link) => ((MainPage)RootFrame.Content).OpenProtocol(link);
+    public void OpenDownloadRequest(string id) => ((MainPage)RootFrame.Content).OpenDownloadRequest(id);
     private void SyncTitleBarTheme()
     {
         var dark = ((FrameworkElement)Content).ActualTheme == ElementTheme.Dark;

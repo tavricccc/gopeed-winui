@@ -62,6 +62,19 @@ public sealed partial class MainPage : Page
   }
   catch (Exception error) { ViewModel.Error = $"無法開啟 Gopeed 連結：{error.Message}"; }
  }
+ public async void OpenDownloadRequest(string id)
+ {
+  try
+  {
+   await ready.Task;
+   if (!ViewModel.IsConnected) return;
+   var path = Path.Combine(CoreClient.DataDirectory, "pending-downloads", id + ".json");
+   var request = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path))!.AsObject();
+   File.Delete(path);
+   new DownloadWindow(ViewModel.Core, request).Activate();
+  }
+  catch (Exception error) { ViewModel.Error = $"無法開啟下載視窗：{error.Message}"; }
+ }
  private void FilterChanged(object s, SelectionChangedEventArgs e) { if (FilterBox?.SelectedItem is ComboBoxItem item) { ViewModel.Filter = item.Tag.ToString()!; ViewModel.ApplyFilter(); } }
  private void SearchChanged(AutoSuggestBox s, AutoSuggestBoxTextChangedEventArgs e) { ViewModel.Search = s.Text; ViewModel.ApplyFilter(); }
  private async void PauseSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) await ViewModel.ActAsync("pause", [item]); }
