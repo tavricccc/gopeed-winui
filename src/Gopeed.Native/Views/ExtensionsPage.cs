@@ -13,9 +13,9 @@ public sealed class ExtensionsPage : Page
  private readonly StackPanel list = new() { Spacing = 16 };
  private readonly InfoBar message = new() { IsClosable = true };
  private readonly TextBox url = new() { Header = "擴充功能 Git repository", PlaceholderText = "https://github.com/owner/gopeed-extension", MinWidth = 320 };
- protected override void OnNavigatedTo(NavigationEventArgs e)
+ public ExtensionsPage(DownloadsViewModel viewModel)
  {
-  vm = (DownloadsViewModel)e.Parameter;
+  vm = viewModel;
   var panel = new StackPanel { Spacing = 20, MaxWidth = 800, HorizontalAlignment = HorizontalAlignment.Left };
   panel.Children.Add(new TextBlock { Text = "擴充功能", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] });
   panel.Children.Add(new TextBlock { Text = "讓 Gopeed 解析更多下載來源。擴充功能會在本機執行程式碼，請選擇你信任的專案。", TextWrapping = TextWrapping.Wrap }); panel.Children.Add(message); panel.Children.Add(url);
@@ -41,7 +41,7 @@ public sealed class ExtensionsPage : Page
     var commands = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
     var settings = new Button { Content = "設定" }; settings.Click += async (_, _) => await EditSettings(ext,route); commands.Children.Add(settings);
     var update = new Button { Content = "更新" }; update.Click += async (_, _) => { update.IsEnabled = false; try { await vm.Core.SendAsync(HttpMethod.Post,route+"/update"); await Reload(); } catch (Exception ex) { Error(ex); } finally { update.IsEnabled = true; } }; commands.Children.Add(update);
-    var remove = new Button { Content = "解除安裝" }; remove.Click += async (_, _) => { var dialog = new ContentDialog { Title = "解除安裝擴充功能？", Content = ext["title"]!.GetValue<string>(), PrimaryButtonText = "解除安裝", CloseButtonText = "取消", XamlRoot = XamlRoot }; if (await dialog.ShowAsync() == ContentDialogResult.Primary) { try { await vm.Core.SendAsync(HttpMethod.Delete,route); await Reload(); } catch (Exception ex) { Error(ex); } } }; commands.Children.Add(remove); section.Children.Add(commands); list.Children.Add(section);
+    var remove = new Button { Content = "解除安裝" }; remove.Click += async (_, _) => { var dialog = new ContentDialog { Title = "解除安裝擴充功能？", Content = ext["title"]!.GetValue<string>(), PrimaryButtonText = "解除安裝", CloseButtonText = "取消", XamlRoot = XamlRoot }; if (await Gopeed_Native.Services.NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) { try { await vm.Core.SendAsync(HttpMethod.Delete,route); await Reload(); } catch (Exception ex) { Error(ex); } } }; commands.Children.Add(remove); section.Children.Add(commands); list.Children.Add(section);
    }
   }
   catch (Exception ex) { Error(ex); }
@@ -64,7 +64,7 @@ public sealed class ExtensionsPage : Page
   }
   if (readers.Count == 0) panel.Children.Add(new TextBlock { Text = "此擴充功能沒有可調整的設定。" });
   var dialog = new ContentDialog { Title = ext["title"]!.GetValue<string>(), Content = new ScrollViewer { Content = panel, MaxHeight = 400 }, PrimaryButtonText = "儲存", CloseButtonText = "取消", XamlRoot = XamlRoot };
-  if (await dialog.ShowAsync() == ContentDialogResult.Primary) { try { var settings = new JsonObject(); foreach (var pair in readers) settings[pair.Key] = pair.Value(); await vm.Core.SendAsync(HttpMethod.Put,route+"/settings", new JsonObject { ["settings"] = settings }); await Reload(); } catch (Exception ex) { Error(ex); } }
+  if (await Gopeed_Native.Services.NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) { try { var settings = new JsonObject(); foreach (var pair in readers) settings[pair.Key] = pair.Value(); await vm.Core.SendAsync(HttpMethod.Put,route+"/settings", new JsonObject { ["settings"] = settings }); await Reload(); } catch (Exception ex) { Error(ex); } }
  }
  private void Error(Exception e) { message.Severity = InfoBarSeverity.Error; message.Message = e.Message; message.IsOpen = true; }
 }

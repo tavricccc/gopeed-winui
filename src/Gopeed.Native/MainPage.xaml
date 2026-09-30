@@ -8,7 +8,7 @@
    <Grid x:Name="DownloadsSurface" Grid.Row="1" RowSpacing="14">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <Grid ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-     <StackPanel Spacing="4"><TextBlock Text="下載" Style="{ThemeResource TitleTextBlockStyle}"/><TextBlock Text="你的檔案，照自己的步調下載。" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel>
+     <StackPanel Spacing="4"><TextBlock Text="下載" Style="{ThemeResource TitleTextBlockStyle}"/><TextBlock Text="管理進度，完成後開啟檔案。" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></StackPanel>
      <Button Grid.Column="1" Click="AddDownload" Style="{StaticResource AccentButtonStyle}" IsEnabled="{x:Bind ViewModel.IsConnected, Mode=OneWay}" VerticalAlignment="Center" AutomationProperties.AutomationId="AddDownload"><StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE710;" FontSize="16"/><TextBlock Text="新增下載"/></StackPanel></Button>
     </Grid>
     <Grid Grid.Row="1" ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="240"/></Grid.ColumnDefinitions>
@@ -18,8 +18,8 @@
     <CommandBar Grid.Row="2" DefaultLabelPosition="Right" Background="{ThemeResource LayerFillColorDefaultBrush}">
      <AppBarButton Icon="Pause" Label="暫停" Click="PauseSelected" IsEnabled="{x:Bind ViewModel.CanPauseSelected, Mode=OneWay}"/>
      <AppBarButton Icon="Play" Label="繼續 / 重試" Click="ResumeSelected" IsEnabled="{x:Bind ViewModel.CanResumeSelected, Mode=OneWay}"/>
-     <AppBarSeparator/><AppBarButton Icon="Folder" Label="資料夾" Click="OpenFolder"/><AppBarButton Label="詳細資訊" Click="ShowDetails"><AppBarButton.Icon><FontIcon Glyph="&#xE946;"/></AppBarButton.Icon></AppBarButton><AppBarButton Icon="Delete" Label="移除" Click="DeleteSelected"/>
-     <CommandBar.SecondaryCommands><AppBarButton Icon="OpenFile" Label="開啟檔案" Click="OpenSelected"/><AppBarButton Icon="Pause" Label="暫停顯示的下載" Click="PauseAll"/><AppBarButton Icon="Play" Label="繼續顯示的下載" Click="ResumeAll"/><AppBarButton Icon="Refresh" Label="重新整理" Click="RefreshClicked"/></CommandBar.SecondaryCommands>
+     <AppBarSeparator/><AppBarButton Icon="Folder" Label="資料夾" Click="OpenFolder" IsEnabled="{x:Bind ViewModel.HasSelection, Mode=OneWay}"/><AppBarButton Label="詳細資訊" Click="ShowDetails" IsEnabled="{x:Bind ViewModel.HasSelection, Mode=OneWay}"><AppBarButton.Icon><FontIcon Glyph="&#xE946;"/></AppBarButton.Icon></AppBarButton><AppBarButton Icon="Delete" Label="移除" Click="DeleteSelected" IsEnabled="{x:Bind ViewModel.HasSelection, Mode=OneWay}"/>
+     <CommandBar.SecondaryCommands><AppBarButton Icon="OpenFile" Label="開啟檔案" Click="OpenSelected" IsEnabled="{x:Bind ViewModel.CanOpenSelected, Mode=OneWay}"/><AppBarButton Icon="Pause" Label="暫停顯示的下載" Click="PauseAll"/><AppBarButton Icon="Play" Label="繼續顯示的下載" Click="ResumeAll"/><AppBarButton Icon="Refresh" Label="重新整理" Click="RefreshClicked"/></CommandBar.SecondaryCommands>
     </CommandBar>
     <Grid Grid.Row="3" ColumnSpacing="24">
      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DetailColumn" Width="0"/></Grid.ColumnDefinitions>
@@ -30,11 +30,11 @@
      <ListView x:Name="DownloadList" ItemsSource="{x:Bind ViewModel.VisibleItems, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}" SelectionMode="Single" DoubleTapped="ListDoubleTapped" HorizontalContentAlignment="Stretch" AutomationProperties.AutomationId="DownloadList">
       <ListView.ItemContainerStyle><Style TargetType="ListViewItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="12"/></Style></ListView.ItemContainerStyle>
       <ListView.ItemTemplate><DataTemplate x:DataType="models:DownloadItem">
-       <Grid ColumnSpacing="16" RowSpacing="6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="115"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <Grid ColumnSpacing="16" RowSpacing="6" Background="{ThemeResource ControlFillColorTransparentBrush}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="115"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <TextBlock Text="{x:Bind Name, Mode=OneWay}" Style="{ThemeResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Text="{x:Bind StatusText, Mode=OneWay}" HorizontalAlignment="Right"/>
         <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Value="{x:Bind Percent, Mode=OneWay}" IsIndeterminate="{x:Bind IsIndeterminate, Mode=OneWay}" Maximum="100" MinWidth="0"/>
         <TextBlock Grid.Row="2" Text="{x:Bind TransferText, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind SpeedText, Mode=OneWay}" HorizontalAlignment="Right" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/>
-        <Grid.ContextFlyout><MenuFlyout><MenuFlyoutItem Text="暫停" Icon="Pause" Click="ContextPause" Tag="{x:Bind Id}"/><MenuFlyoutItem Text="繼續 / 重試" Icon="Play" Click="ContextResume" Tag="{x:Bind Id}"/><MenuFlyoutItem Text="開啟資料夾" Icon="Folder" Click="ContextFolder" Tag="{x:Bind Id}"/><MenuFlyoutSeparator/><MenuFlyoutItem Text="移除" Icon="Delete" Click="ContextDelete" Tag="{x:Bind Id}"/></MenuFlyout></Grid.ContextFlyout>
+        <Grid.ContextFlyout><MenuFlyout><MenuFlyoutItem Text="暫停" Icon="Pause" Click="ContextPause" IsEnabled="{x:Bind CanPause, Mode=OneWay}" Tag="{x:Bind Id}"/><MenuFlyoutItem Text="繼續 / 重試" Icon="Play" Click="ContextResume" IsEnabled="{x:Bind CanResume, Mode=OneWay}" Tag="{x:Bind Id}"/><MenuFlyoutItem Text="開啟資料夾" Icon="Folder" Click="ContextFolder" Tag="{x:Bind Id}"/><MenuFlyoutSeparator/><MenuFlyoutItem Text="移除" Icon="Delete" Click="ContextDelete" Tag="{x:Bind Id}"/></MenuFlyout></Grid.ContextFlyout>
        </Grid>
       </DataTemplate></ListView.ItemTemplate>
      </ListView>
@@ -42,13 +42,15 @@
      <ScrollViewer x:Name="DetailsPane" Grid.Column="1" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Spacing="16" DataContext="{x:Bind ViewModel.Selected, Mode=OneWay}">
        <TextBlock Text="詳細資訊" Style="{ThemeResource SubtitleTextBlockStyle}"/>
-       <TextBlock Text="選取下載以查看進度與來源。" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+       <TextBlock x:Name="DetailsHint" Text="選取下載以查看進度與來源。" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+       <StackPanel x:Name="SelectionDetails" Spacing="8" Visibility="Collapsed">
        <TextBlock Text="{Binding Name}" Style="{ThemeResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
        <TextBlock Text="{Binding StatusText}"/><TextBlock Text="{Binding TransferText}" TextWrapping="Wrap"/>
        <TextBlock Text="下載速度" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding SpeedText}"/>
        <TextBlock Text="剩餘時間" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding RemainingText}"/>
        <TextBlock Text="儲存位置" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding FilePath}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
        <TextBlock Text="來源" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding Url}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+       </StackPanel>
       </StackPanel>
      </ScrollViewer>
     </Grid>

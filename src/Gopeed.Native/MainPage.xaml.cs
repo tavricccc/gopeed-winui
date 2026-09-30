@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using Gopeed_Native.Models;
 using Gopeed_Native.ViewModels;
 using Gopeed_Native.Views;
+using Gopeed_Native.Services;
 using System.Diagnostics;
 
 namespace Gopeed_Native;
@@ -25,13 +26,14 @@ public sealed partial class MainPage : Page
   Unloaded += (_, _) => { timer.Stop(); ViewModel.Dispose(); };
   ViewModel.VisibleItems.CollectionChanged += (_, _) => EmptyState.Visibility = ViewModel.VisibleItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
   ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Error) && ViewModel.Error.Length > 0) { ErrorBar.Message = ViewModel.Error; ErrorBar.IsOpen = true; } };
+  ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Selected)) { SelectionDetails.Visibility = ViewModel.HasSelection ? Visibility.Visible : Visibility.Collapsed; DetailsHint.Visibility = ViewModel.HasSelection ? Visibility.Collapsed : Visibility.Visible; } };
   timer.Tick += async (_, _) => { if (refreshing || !ViewModel.IsConnected) return; refreshing = true; await ViewModel.RefreshAsync(); refreshing = false; };
  }
  private async void Start(object sender, RoutedEventArgs e) { Loaded -= Start; await ViewModel.InitializeAsync(); timer.Start(); }
  private async void AddDownload(object sender, RoutedEventArgs e)
  {
   if (!ViewModel.IsConnected) return; timer.Stop();
-  try { await new AddDownloadDialog(ViewModel.Core) { XamlRoot = XamlRoot }.ShowAsync(); await ViewModel.RefreshAsync(); }
+  try { await NativeDialogs.ShowAsync(new AddDownloadDialog(ViewModel.Core), XamlRoot); await ViewModel.RefreshAsync(); }
   catch (Exception error) { ViewModel.Error = error.Message; } finally { timer.Start(); }
  }
  private void FilterChanged(object s, SelectionChangedEventArgs e) { if (FilterBox?.SelectedItem is ComboBoxItem item) { ViewModel.Filter = item.Tag.ToString()!; ViewModel.ApplyFilter(); } }
@@ -49,13 +51,13 @@ public sealed partial class MainPage : Page
  {
   var files = new CheckBox { Content = "同時刪除已下載的檔案" };
   var dialog = new ContentDialog { Title = "移除下載？", Content = new StackPanel { Spacing = 12, Children = { new TextBlock { Text = item.Name, TextWrapping = TextWrapping.Wrap }, files } }, PrimaryButtonText = "移除", CloseButtonText = "取消", DefaultButton = ContentDialogButton.Close, XamlRoot = XamlRoot };
-  if (await dialog.ShowAsync() == ContentDialogResult.Primary) await ViewModel.ActAsync("delete", [item], files.IsChecked == true);
+  if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) await ViewModel.ActAsync("delete", [item], files.IsChecked == true);
  }
  private async void ShowDetails(object s, RoutedEventArgs e)
  {
   if (ViewModel.Selected is not { } item) return;
   var text = new TextBlock { Text = $"{item.Name}\n\n{item.StatusText} · {item.Protocol}\n{item.TransferText}\n速度：{item.SpeedText}\n剩餘時間：{item.RemainingText}\n\n儲存位置\n{item.FilePath}\n\n來源\n{item.Url}", TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
-  await new ContentDialog { Title = "下載詳細資訊", Content = new ScrollViewer { Content = text, MaxHeight = 450 }, CloseButtonText = "關閉", XamlRoot = XamlRoot }.ShowAsync();
+  await NativeDialogs.ShowAsync(new ContentDialog { Title = "下載詳細資訊", Content = new ScrollViewer { Content = text, MaxHeight = 450 }, CloseButtonText = "關閉" }, XamlRoot);
  }
  private void ListDoubleTapped(object s, DoubleTappedRoutedEventArgs e) { if (ViewModel.Selected?.IsComplete == true) OpenSelected(s, new()); else ShowDetails(s, new()); }
  private DownloadItem? ContextItem(object s) => ViewModel.VisibleItems.FirstOrDefault(i => i.Id == (s as MenuFlyoutItem)?.Tag?.ToString());
@@ -72,6 +74,6 @@ public sealed partial class MainPage : Page
   var downloads = !e.IsSettingsSelected && (e.SelectedItem as NavigationViewItem)?.Tag?.ToString() != "extensions";
   DownloadsSurface.Visibility = downloads ? Visibility.Visible : Visibility.Collapsed;
   SettingsFrame.Visibility = downloads ? Visibility.Collapsed : Visibility.Visible;
-  if (!downloads) SettingsFrame.Navigate(e.IsSettingsSelected ? typeof(SettingsPage) : typeof(ExtensionsPage), ViewModel);
+  if (!downloads) SettingsFrame.Content = e.IsSettingsSelected ? new SettingsPage(ViewModel) : new ExtensionsPage(ViewModel);
  }
 }

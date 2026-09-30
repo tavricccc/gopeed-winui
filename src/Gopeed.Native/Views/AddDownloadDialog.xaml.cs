@@ -17,7 +17,7 @@ public sealed partial class AddDownloadDialog : ContentDialog
   this.core = core; InitializeComponent();
   Loaded += async (_, _) => { try { var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? ""; if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"); } catch (Exception e) { ShowError(e); } };
  }
- private void InputChanged(object s, TextChangedEventArgs e) { resolved = null; PrimaryButtonText = "檢查連結"; if (Files is not null) Files.Visibility = Visibility.Collapsed; }
+ private void InputChanged(object s, TextChangedEventArgs e) { resolved = null; var count = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length; PrimaryButtonText = count > 1 ? $"開始 {count} 個下載" : "檢查連結"; if (Files is not null) Files.Visibility = Visibility.Collapsed; }
  private async void PickFolder(object s, RoutedEventArgs e)
  {
   var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, App.WindowHandle);
@@ -46,6 +46,7 @@ public sealed partial class AddDownloadDialog : ContentDialog
   {
    var links = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
    if (links.Length == 0) throw new FormatException("請輸入下載連結。");
+   if (double.IsNaN(Connections.Value)) throw new FormatException("請輸入連線數。");
    if (!Path.IsPathFullyQualified(Destination.Text.Trim())) throw new FormatException("請選擇完整的儲存路徑。");
    if (FileName.Text.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) throw new FormatException("檔名含有無法使用的字元。");
    Directory.CreateDirectory(Destination.Text.Trim());
@@ -62,7 +63,7 @@ public sealed partial class AddDownloadDialog : ContentDialog
     if (string.IsNullOrEmpty(displayName)) displayName = resource["files"]!.AsArray()[0]!["name"]!.GetValue<string>();
     var size = resource["size"]!.GetValue<long>();
     Preview.Text = $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
-    Files.Items.Clear(); foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(file!["name"]!.GetValue<string>());
+    Files.Items.Clear(); var index = 0; foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(new ResolvedFile(index++, Path.Combine(file!["path"]?.GetValue<string>() ?? "", file["name"]!.GetValue<string>())));
     Files.SelectAll(); Files.Visibility = Files.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
     PrimaryButtonText = "開始下載";
    }
@@ -70,7 +71,7 @@ public sealed partial class AddDownloadDialog : ContentDialog
    {
     // Update resolution options if destination, file name or file selection changed after probing.
     var request = BuildRequest(links[0]);
-    request["opts"]!["selectFiles"] = new JsonArray(Files.SelectedItems.Cast<string>().Select(name => JsonValue.Create(Files.Items.IndexOf(name)) as JsonNode).ToArray());
+    request["opts"]!["selectFiles"] = new JsonArray(Files.SelectedItems.Cast<ResolvedFile>().Select(file => JsonValue.Create(file.Index) as JsonNode).ToArray());
     if (Files.Items.Count > 1 && Files.SelectedItems.Count == 0) throw new FormatException("請至少選擇一個檔案。");
     await core.SendAsync(HttpMethod.Post, "tasks", request); complete = true;
    }
@@ -80,4 +81,5 @@ public sealed partial class AddDownloadDialog : ContentDialog
   if (complete) Hide();
  }
  private void ShowError(Exception e) { Message.Message = e.Message; Message.IsOpen = true; }
+ private sealed record ResolvedFile(int Index, string Name) { public override string ToString() => Name; }
 }

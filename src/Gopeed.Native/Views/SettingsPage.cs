@@ -21,23 +21,25 @@ public sealed class SettingsPage : Page
  private readonly InfoBar message = new() { IsClosable = true };
  private readonly TextBox endpoint = new() { Header = "瀏覽器擴充套件伺服器位址", IsReadOnly = true };
  private readonly PasswordBox token = new() { Header = "API Token", PasswordRevealMode = PasswordRevealMode.Peek };
- protected override void OnNavigatedTo(NavigationEventArgs e) { vm = (DownloadsViewModel)e.Parameter; Build(); Loaded += Load; }
+ public SettingsPage(DownloadsViewModel viewModel) { vm = viewModel; Build(); Loaded += Load; }
  private void Build()
  {
   var content = new StackPanel { Spacing = 18, MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Left };
   content.Children.Add(new TextBlock { Text = "設定", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] }); content.Children.Add(message);
   var browse = new Button { Content = "選擇資料夾…" }; browse.Click += async (_, _) => { var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, App.WindowHandle); var picked = await picker.PickSingleFolderAsync(); if (picked is not null) folder.Text = picked.Path; };
   content.Children.Add(folder); content.Children.Add(browse); content.Children.Add(running); content.Children.Add(connections); content.Children.Add(proxyMode); content.Children.Add(proxy); content.Children.Add(theme);
-  var save = new Button { Content = "儲存設定", Style = (Style)Application.Current.Resources["AccentButtonStyle"] }; save.Click += Save; content.Children.Add(save);
+  var save = new Button { Content = "儲存設定", Style = (Style)Application.Current.Resources["AccentButtonStyle"], HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0,12,0,0) }; save.Click += Save;
   content.Children.Add(new TextBlock { Text = "瀏覽器整合", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
   content.Children.Add(new TextBlock { Text = "安裝 Gopeed 官方瀏覽器擴充套件，新增下方伺服器與 Token。位址與 Token 會保留，不需要每次重新設定。", TextWrapping = TextWrapping.Wrap });
   var browser = new HyperlinkButton { Content = "取得 Gopeed 瀏覽器擴充套件", NavigateUri = new Uri("https://github.com/GopeedLab/browser-extension") }; content.Children.Add(browser); content.Children.Add(endpoint); content.Children.Add(token);
   var copy = new Button { Content = "複製 API Token" }; copy.Click += (_, _) => { var data = new Windows.ApplicationModel.DataTransfer.DataPackage(); data.SetText(vm.Core.Token); Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(data); message.Severity = InfoBarSeverity.Success; message.Message = "Token 已複製。"; message.IsOpen = true; }; content.Children.Add(copy);
   content.Children.Add(new TextBlock { Text = "背景下載", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
   content.Children.Add(new TextBlock { Text = "關閉視窗會釋放前端記憶體，下載核心仍繼續執行。再次開啟即可接回佇列。", TextWrapping = TextWrapping.Wrap });
-  var stop = new Button { Content = "停止下載核心並結束" }; stop.Click += async (_, _) => { var dialog = new ContentDialog { Title = "停止所有背景下載？", Content = "下載進度會保存，下一次開啟可繼續。", PrimaryButtonText = "停止並結束", CloseButtonText = "取消", XamlRoot = XamlRoot }; if (await dialog.ShowAsync() == ContentDialogResult.Primary) { try { await vm.Core.StopAsync(); App.Window.Close(); } catch (Exception ex) { Error(ex); } } }; content.Children.Add(stop);
+  var stop = new Button { Content = "停止下載核心並結束" }; stop.Click += async (_, _) => { var dialog = new ContentDialog { Title = "停止所有背景下載？", Content = "下載進度會保存，下一次開啟可繼續。", PrimaryButtonText = "停止並結束", CloseButtonText = "取消", XamlRoot = XamlRoot }; if (await Gopeed_Native.Services.NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) { try { await vm.Core.StopAsync(); App.Window.Close(); } catch (Exception ex) { Error(ex); } } }; content.Children.Add(stop);
   content.Children.Add(new TextBlock { Text = "Gopeed Native 0.1.0 · Gopeed 核心 1.9.3 · GPL-3.0\n獨立 WinUI 3 前端，非 Gopeed 官方版本。", TextWrapping = TextWrapping.Wrap });
-  Content = new ScrollViewer { Content = content, Padding = new Thickness(0,0,16,24), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+  var surface = new Grid(); surface.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1,GridUnitType.Star) }); surface.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+  surface.Children.Add(new ScrollViewer { Content = content, Padding = new Thickness(0,0,16,24), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+  Grid.SetRow(save,1); surface.Children.Add(save); Content = surface;
  }
  private async void Load(object s, RoutedEventArgs e)
  {
@@ -58,6 +60,7 @@ public sealed class SettingsPage : Page
   try
   {
    if (config is null) throw new InvalidOperationException("下載核心尚未連接。");
+   if (double.IsNaN(running.Value) || double.IsNaN(connections.Value)) throw new FormatException("請輸入同時下載數與連線數。");
    if (!Path.IsPathFullyQualified(folder.Text)) throw new FormatException("請選擇完整的下載路徑。");
    Directory.CreateDirectory(folder.Text); config["downloadDir"] = folder.Text; config["maxRunning"] = (int)running.Value;
    var protocols = config["protocolConfig"]!.AsObject(); protocols["http"] ??= new JsonObject(); protocols["http"]!["connections"] = (int)connections.Value;

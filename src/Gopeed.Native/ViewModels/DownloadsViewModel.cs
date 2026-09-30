@@ -20,15 +20,19 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     public string Search { get; set; } = "";
     public bool CanPauseSelected => Selected?.CanPause == true;
     public bool CanResumeSelected => Selected?.CanResume == true;
+    public bool HasSelection => Selected is not null;
+    public bool CanOpenSelected => Selected?.IsComplete == true;
     partial void OnSelectedChanged(DownloadItem? oldValue, DownloadItem? newValue)
     {
         if (oldValue is not null) oldValue.PropertyChanged -= SelectionUpdated;
         if (newValue is not null) newValue.PropertyChanged += SelectionUpdated;
         SelectionUpdated(this, new System.ComponentModel.PropertyChangedEventArgs(null));
+        OnPropertyChanged(nameof(HasSelection));
     }
     private void SelectionUpdated(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         OnPropertyChanged(nameof(CanPauseSelected)); OnPropertyChanged(nameof(CanResumeSelected));
+        OnPropertyChanged(nameof(CanOpenSelected));
     }
 
     public async Task InitializeAsync()
@@ -50,7 +54,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             foreach (var id in items.Keys.Where(id => !ids.Contains(id)).ToList()) items.Remove(id);
             ApplyFilter();
             var active = items.Values.Count(i => i.Status == "running");
-            Summary = $"{items.Count} 個下載 · {active} 個進行中 · {DownloadItem.FormatBytes(items.Values.Sum(i => i.Speed))}/s";
+            Summary = $"{items.Count} 個下載 · {active} 個進行中 · {DownloadItem.FormatBytes(items.Values.Where(i => i.Status == "running").Sum(i => i.Speed))}/s";
         }
         catch (Exception e) { Error = e.Message; }
     }

@@ -44,6 +44,7 @@ public sealed class DownloadItem : ObservableObject
         Data = data;
         OnPropertyChanged(string.Empty);
     }
+    public override string ToString() => Name;
     public static string FormatBytes(long value) => value switch
     {
         >= 1L << 30 => $"{value / (double)(1L << 30):0.00} GB",

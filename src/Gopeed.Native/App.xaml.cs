@@ -63,9 +63,9 @@ public partial class App : Application
             await instance.RedirectActivationToAsync(AppInstance.GetCurrent().GetActivatedEventArgs());
             Exit(); return;
         }
-        instance.Activated += (_, _) => DispatcherQueue.TryEnqueue(() => Window.Activate());
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        instance.Activated += (_, _) => DispatcherQueue.TryEnqueue(() => Window.Activate());
         Window.Activate();
     }
 }
