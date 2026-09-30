@@ -126,7 +126,7 @@ WinUI 基本控制項使用 `ControlCornerRadius`，浮出層使用 `OverlayCorn
 
 ## Components
 
-0.1.2 增加瀏覽器下載的獨立原生視窗。確認視窗預設 640×540 DIP，來源使用單行欄位、檔名與位置可編輯，先解析大小，再由使用者按「開始下載」。沿用既有 ContentDialog 與 ThemeResource；既有的主清單新增對話框仍保留多行與 torrent 選擇。
+瀏覽器下載使用獨立原生視窗。確認視窗預設 640×540 DIP，來源使用單行欄位、檔名與位置可編輯，先解析大小，再由使用者按「開始下載」。0.1.3 的確認頁直接填滿視窗，統一使用 ApplicationPageBackgroundThemeBrush，外距 24 DIP、區段距 20 DIP、底部按鈕靠右；不再嵌套 ContentDialog 外框、遮罩或額外白色留邊。DownloadForm UserControl 與主清單新增對話框共用邏輯；主清單仍保留多行與 torrent 選擇。
 
 開始後同一視窗縮為 640×480 DIP，顯示進度、傳輸量、速度、剩餘時間、來源與位置；底列暫停、繼續、開啟與資料夾命令固定可達，上方資訊可捲動。完成前不啟用開啟檔案。關閉視窗會停止該視窗輪詢，下載由背景核心繼續。
 

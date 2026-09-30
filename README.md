@@ -26,6 +26,8 @@ Gopeed 下載引擎的 Windows 原生前端。介面使用 WinUI 3、繁體中�
 
 ### 建置
 
+0.1.3 將獨立確認頁直接放入視窗，移除內嵌對話框造成的白色外框；主清單與獨立視窗共用 DownloadForm。HTTP 標頭解析同時處理 WinUI 的 CR 換行、LF 與 CRLF，避免多行被黏入 Sec-Ch-Ua；保留各標頭值，包含 Cookie、Referer 與品牌引號。
+
 安裝 Go 1.24.9 以上、.NET 10 SDK 與 PowerShell 7；製作安裝包另外需要 Inno Setup 6，預設尋找目前使用者的安裝位置。首次取得專案需執行 `git submodule update --init --recursive`。建置前先關閉本專案前端與核心，避免正在執行的檔案被鎖定。
 
 ```powershell

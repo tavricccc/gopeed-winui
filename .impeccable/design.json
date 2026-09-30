@@ -15,6 +15,9 @@
       "src/Gopeed.Native/Views/ExtensionsPage.cs",
       "src/Gopeed.Native/Views/AddDownloadDialog.xaml",
       "src/Gopeed.Native/Views/AddDownloadDialog.xaml.cs",
+      "src/Gopeed.Native/Views/DownloadForm.xaml",
+      "src/Gopeed.Native/Views/DownloadForm.xaml.cs",
+      "src/Gopeed.Native/Views/DownloadConfirmationPage.xaml",
       "src/Gopeed.Native/Views/DownloadWindow.cs",
       "src/Gopeed.Native/Views/DownloadProgressPage.cs",
       "src/Gopeed.Native/Services/NativeDialogs.cs",
@@ -54,7 +57,7 @@
       { "name": "命令列", "kind": "custom", "source": "MainPage.xaml", "control": "CommandBar + AppBarButton", "description": "依下載選取與狀態啟用命令，次要操作置於 overflow；DefaultLabelPosition Right。" },
       { "name": "新增下載", "kind": "custom", "source": "Views/AddDownloadDialog.xaml", "control": "ContentDialog", "description": "單一連結檢查再開始；批次顯示數量；InfoBar 回報錯誤，忙碌時 ProgressRing 及停用主按鈕。" },
       { "name": "移除下載", "kind": "custom", "source": "MainPage.xaml.cs", "control": "ContentDialog + CheckBox", "description": "預設取消；刪除實體檔案預設未勾選；使用 NativeDialogs 同步實際主題。" },
-      { "name": "瀏覽器下載確認視窗", "kind": "custom", "source": "Views/DownloadWindow.cs / Views/AddDownloadDialog.xaml.cs", "control": "Window + ContentDialog", "description": "640×540 DIP 獨立視窗，單行來源、可編輯檔名／位置、解析大小；確認前不建立任務，取消關閉視窗。" },
+      { "name": "瀏覽器下載確認視窗", "kind": "custom", "source": "Views/DownloadWindow.cs / Views/DownloadConfirmationPage.xaml / Views/DownloadForm.xaml", "control": "Window + Page + UserControl", "description": "640×540 DIP 獨立視窗；頁面直接填滿，統一背景、24 DIP 外距、20 DIP 區段距、底部按鈕靠右。單行來源、可編輯檔名／位置、解析大小；確認前不建立任務，取消關閉視窗。" },
       { "name": "下載進度視窗", "kind": "custom", "source": "Views/DownloadProgressPage.cs", "control": "Window + ProgressBar + TextBlock + Button", "description": "640×480 DIP，原生進度與傳輸資訊，底列命令固定可達；各視窗獨立 API client 和輪詢生命週期，關閉仍背景下載。" }
     ],
     "previewPolicy": "原生 WinUI 3 為設計權威。components 保留為空，不建立 HTML/CSS 仿製控制項；nativeComponents 記錄實際原生元件。沒有為固定圖示色生成未實作的 tonal ramp。",
