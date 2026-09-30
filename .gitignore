@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+artifacts/
+work/
+.impeccable/review/
+*.pfx
+*.cer
+core/gopeed-core.exe
