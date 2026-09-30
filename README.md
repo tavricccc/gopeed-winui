@@ -18,6 +18,14 @@ Gopeed 下載引擎的 Windows 原生前端。介面使用 WinUI 3、繁體中�
 
 ## 開發
 
+### 0.1.2 瀏覽器下載視窗
+
+保持官方擴充套件的遠端下載設定：通訊協定 HTTP、位址欄填 `127.0.0.1:18762`（不含 `http://`），Token 不變。瀏覽器建立下載的 API 請求會先開獨立原生確認視窗；確認後才建立任務，同一視窗接著顯示進度與暫停／續傳。取消不建立下載，關閉進度視窗仍會背景下載。
+
+這個本機入口現在以使用者確認為預設行為。原生前端在確認操作後附加內部標記，才將建立請求交給 Gopeed。Token 驗證保持啟用。暫存請求位於目前使用者的 `GopeedNative/pending-downloads`，前端取用後移除；不把 Cookie 或長 HTTP headers 塞進協定 URL／命令列。
+
+### 建置
+
 安裝 Go 1.24.9 以上、.NET 10 SDK 與 PowerShell 7；製作安裝包另外需要 Inno Setup 6，預設尋找目前使用者的安裝位置。首次取得專案需執行 `git submodule update --init --recursive`。建置前先關閉本專案前端與核心，避免正在執行的檔案被鎖定。
 
 ```powershell
