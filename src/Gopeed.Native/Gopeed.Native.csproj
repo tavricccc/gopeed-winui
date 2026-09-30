@@ -17,6 +17,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>true</SelfContained>
+    <WindowsPackageType>None</WindowsPackageType>
   </PropertyGroup>
 
   <ItemGroup>

@@ -16,6 +16,12 @@ public sealed partial class MainPage : Page
  public MainPage()
  {
   InitializeComponent(); Loaded += Start;
+  SizeChanged += (_, e) =>
+  {
+   var wide = e.NewSize.Width >= 1000;
+   DetailColumn.Width = new GridLength(wide ? 280 : 0);
+   DetailsPane.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
+  };
   Unloaded += (_, _) => { timer.Stop(); ViewModel.Dispose(); };
   ViewModel.VisibleItems.CollectionChanged += (_, _) => EmptyState.Visibility = ViewModel.VisibleItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
   ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Error) && ViewModel.Error.Length > 0) { ErrorBar.Message = ViewModel.Error; ErrorBar.IsOpen = true; } };

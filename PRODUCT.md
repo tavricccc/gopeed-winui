@@ -8,7 +8,7 @@ Windows desktop, WinUI 3.
 User-confirmed WinUI 3 interface; Gopeed 1.9.3 Go download core. C# and MVVM for the frontend, independent Go process for the core. GPL-3.0 distribution, retaining upstream notices.
 
 ## Users and purpose
-The user wants a practical Windows download manager with Gopeed's download capabilities and native Windows design and operations. RAM use matters. Traditional Chinese interface. The user explicitly delegates completion and design decisions; no original button layout must be preserved.
+The user wants a practical Windows download manager with Gopeed's download capabilities and native Windows design and operations. RAM use matters. Traditional Chinese interface. The user explicitly delegates completion and design decisions; no original button layout must be preserved. After the Windows certificate-trust elevation was cancelled, deployment uses a per-user self-contained installer and portable build.
 
 ## Capabilities and constraints
 Manage download creation, progress, pause/resume, retry, deletion, files and configuration. Retain the upstream engine and extension system. Build, run, verify real downloads and package locally. Separate UI lifetime from ongoing transfers. No Flutter or web UI in the application.

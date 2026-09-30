@@ -18,6 +18,18 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     [ObservableProperty] public partial bool IsConnected { get; set; }
     public string Filter { get; set; } = "all";
     public string Search { get; set; } = "";
+    public bool CanPauseSelected => Selected?.CanPause == true;
+    public bool CanResumeSelected => Selected?.CanResume == true;
+    partial void OnSelectedChanged(DownloadItem? oldValue, DownloadItem? newValue)
+    {
+        if (oldValue is not null) oldValue.PropertyChanged -= SelectionUpdated;
+        if (newValue is not null) newValue.PropertyChanged += SelectionUpdated;
+        SelectionUpdated(this, new System.ComponentModel.PropertyChangedEventArgs(null));
+    }
+    private void SelectionUpdated(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(CanPauseSelected)); OnPropertyChanged(nameof(CanResumeSelected));
+    }
 
     public async Task InitializeAsync()
     {

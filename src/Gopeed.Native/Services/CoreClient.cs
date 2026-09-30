@@ -30,6 +30,8 @@ public sealed class CoreClient : IDisposable
             var exe = Path.Combine(AppContext.BaseDirectory, "Engine", "gopeed-core.exe");
             var start = new ProcessStartInfo(exe) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = DataDirectory };
             start.ArgumentList.Add("--data"); start.ArgumentList.Add(DataDirectory);
+            start.ArgumentList.Add("--ui"); start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Gopeed.Native.exe"));
+            start.ArgumentList.Add("--icon"); start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
             using var child = Process.Start(start)!;
             var deadline = DateTime.UtcNow.AddSeconds(30);
             while (DateTime.UtcNow < deadline)

@@ -19,9 +19,9 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
-        AppWindow.SetIcon("Assets/AppIcon.ico");
+        AppWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
         var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
-        AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(1040 * scale), (int)(740 * scale)));
+        AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(1120 * scale), (int)(740 * scale)));
         var themePath = System.IO.Path.Combine(Services.CoreClient.DataDirectory, "theme.txt");
         if (System.IO.File.Exists(themePath))
             ((FrameworkElement)Content).RequestedTheme = System.IO.File.ReadAllText(themePath).Trim() switch { "1" => ElementTheme.Light, "2" => ElementTheme.Dark, _ => ElementTheme.Default };

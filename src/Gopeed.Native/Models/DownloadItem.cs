@@ -33,7 +33,9 @@ public sealed class DownloadItem : ObservableObject
             var resource = Data["meta"]?["res"];
             var name = resource?["name"]?.GetValue<string>();
             var file = resource?["files"]?.AsArray().FirstOrDefault();
-            return Path.Combine(Folder, string.IsNullOrEmpty(name) ? Data["meta"]?["opts"]?["name"]?.GetValue<string>() is { Length: > 0 } custom ? custom : file?["name"]?.GetValue<string>() ?? Name : name);
+            var custom = Data["meta"]?["opts"]?["name"]?.GetValue<string>();
+            if (!string.IsNullOrEmpty(name)) return Path.Combine(Folder, string.IsNullOrEmpty(custom) ? name : custom);
+            return Path.Combine(Folder, file?["path"]?.GetValue<string>() ?? "", string.IsNullOrEmpty(custom) ? file?["name"]?.GetValue<string>() ?? Name : custom);
         }
     }
     public void Update(JsonObject data)

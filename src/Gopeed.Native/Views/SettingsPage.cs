@@ -30,7 +30,7 @@ public sealed class SettingsPage : Page
   content.Children.Add(folder); content.Children.Add(browse); content.Children.Add(running); content.Children.Add(connections); content.Children.Add(proxyMode); content.Children.Add(proxy); content.Children.Add(theme);
   var save = new Button { Content = "儲存設定", Style = (Style)Application.Current.Resources["AccentButtonStyle"] }; save.Click += Save; content.Children.Add(save);
   content.Children.Add(new TextBlock { Text = "瀏覽器整合", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
-  content.Children.Add(new TextBlock { Text = "安裝 Gopeed 官方瀏覽器擴充套件，新增下方伺服器與 Token。核心重新啟動後需更新位址與 Token。", TextWrapping = TextWrapping.Wrap });
+  content.Children.Add(new TextBlock { Text = "安裝 Gopeed 官方瀏覽器擴充套件，新增下方伺服器與 Token。位址與 Token 會保留，不需要每次重新設定。", TextWrapping = TextWrapping.Wrap });
   var browser = new HyperlinkButton { Content = "取得 Gopeed 瀏覽器擴充套件", NavigateUri = new Uri("https://github.com/GopeedLab/browser-extension") }; content.Children.Add(browser); content.Children.Add(endpoint); content.Children.Add(token);
   var copy = new Button { Content = "複製 API Token" }; copy.Click += (_, _) => { var data = new Windows.ApplicationModel.DataTransfer.DataPackage(); data.SetText(vm.Core.Token); Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(data); message.Severity = InfoBarSeverity.Success; message.Message = "Token 已複製。"; message.IsOpen = true; }; content.Children.Add(copy);
   content.Children.Add(new TextBlock { Text = "背景下載", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });

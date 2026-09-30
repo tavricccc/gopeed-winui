@@ -16,13 +16,18 @@
      <AutoSuggestBox Grid.Column="1" x:Name="SearchBox" Header="搜尋" PlaceholderText="檔名或網址" QueryIcon="Find" TextChanged="SearchChanged" AutomationProperties.AutomationId="DownloadSearch"/>
     </Grid>
     <CommandBar Grid.Row="2" DefaultLabelPosition="Right" Background="{ThemeResource LayerFillColorDefaultBrush}">
-     <AppBarButton Icon="Pause" Label="暫停" Click="PauseSelected" IsEnabled="{x:Bind ViewModel.Selected.CanPause, Mode=OneWay}"/>
-     <AppBarButton Icon="Play" Label="繼續 / 重試" Click="ResumeSelected" IsEnabled="{x:Bind ViewModel.Selected.CanResume, Mode=OneWay}"/>
-     <AppBarSeparator/><AppBarButton Icon="Folder" Label="資料夾" Click="OpenFolder"/><AppBarButton Icon="Info" Label="詳細資訊" Click="ShowDetails"/><AppBarButton Icon="Delete" Label="移除" Click="DeleteSelected"/>
+     <AppBarButton Icon="Pause" Label="暫停" Click="PauseSelected" IsEnabled="{x:Bind ViewModel.CanPauseSelected, Mode=OneWay}"/>
+     <AppBarButton Icon="Play" Label="繼續 / 重試" Click="ResumeSelected" IsEnabled="{x:Bind ViewModel.CanResumeSelected, Mode=OneWay}"/>
+     <AppBarSeparator/><AppBarButton Icon="Folder" Label="資料夾" Click="OpenFolder"/><AppBarButton Label="詳細資訊" Click="ShowDetails"><AppBarButton.Icon><FontIcon Glyph="&#xE946;"/></AppBarButton.Icon></AppBarButton><AppBarButton Icon="Delete" Label="移除" Click="DeleteSelected"/>
      <CommandBar.SecondaryCommands><AppBarButton Icon="OpenFile" Label="開啟檔案" Click="OpenSelected"/><AppBarButton Icon="Pause" Label="暫停顯示的下載" Click="PauseAll"/><AppBarButton Icon="Play" Label="繼續顯示的下載" Click="ResumeAll"/><AppBarButton Icon="Refresh" Label="重新整理" Click="RefreshClicked"/></CommandBar.SecondaryCommands>
     </CommandBar>
-    <Grid Grid.Row="3">
-     <ListView x:Name="DownloadList" ItemsSource="{x:Bind ViewModel.VisibleItems}" SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}" SelectionMode="Single" DoubleTapped="ListDoubleTapped" HorizontalContentAlignment="Stretch" AutomationProperties.AutomationId="DownloadList">
+    <Grid Grid.Row="3" ColumnSpacing="24">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition x:Name="DetailColumn" Width="0"/></Grid.ColumnDefinitions>
+     <VisualStateManager.VisualStateGroups><VisualStateGroup>
+      <VisualState x:Name="Compact"><VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0"/></VisualState.StateTriggers><VisualState.Setters><Setter Target="DetailColumn.Width" Value="0"/><Setter Target="DetailsPane.Visibility" Value="Collapsed"/></VisualState.Setters></VisualState>
+      <VisualState x:Name="Wide"><VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="1000"/></VisualState.StateTriggers><VisualState.Setters><Setter Target="DetailColumn.Width" Value="280"/><Setter Target="DetailsPane.Visibility" Value="Visible"/></VisualState.Setters></VisualState>
+     </VisualStateGroup></VisualStateManager.VisualStateGroups>
+     <ListView x:Name="DownloadList" ItemsSource="{x:Bind ViewModel.VisibleItems, Mode=OneWay}" SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}" SelectionMode="Single" DoubleTapped="ListDoubleTapped" HorizontalContentAlignment="Stretch" AutomationProperties.AutomationId="DownloadList">
       <ListView.ItemContainerStyle><Style TargetType="ListViewItem"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Padding" Value="12"/></Style></ListView.ItemContainerStyle>
       <ListView.ItemTemplate><DataTemplate x:DataType="models:DownloadItem">
        <Grid ColumnSpacing="16" RowSpacing="6"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="115"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -34,6 +39,18 @@
       </DataTemplate></ListView.ItemTemplate>
      </ListView>
      <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" IsHitTestVisible="False"><FontIcon Glyph="&#xE896;" FontSize="40" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="準備好下一個下載" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center"/><TextBlock Text="新增網址、磁力連結或 torrent 檔案。" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/></StackPanel>
+     <ScrollViewer x:Name="DetailsPane" Grid.Column="1" Visibility="Collapsed" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="16" DataContext="{x:Bind ViewModel.Selected, Mode=OneWay}">
+       <TextBlock Text="詳細資訊" Style="{ThemeResource SubtitleTextBlockStyle}"/>
+       <TextBlock Text="選取下載以查看進度與來源。" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+       <TextBlock Text="{Binding Name}" Style="{ThemeResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+       <TextBlock Text="{Binding StatusText}"/><TextBlock Text="{Binding TransferText}" TextWrapping="Wrap"/>
+       <TextBlock Text="下載速度" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding SpeedText}"/>
+       <TextBlock Text="剩餘時間" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding RemainingText}"/>
+       <TextBlock Text="儲存位置" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding FilePath}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+       <TextBlock Text="來源" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock Text="{Binding Url}" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+      </StackPanel>
+     </ScrollViewer>
     </Grid>
     <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{x:Bind ViewModel.Summary, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/><TextBlock Grid.Column="1" Text="關閉視窗仍會繼續下載" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{ThemeResource CaptionTextBlockStyle}"/></Grid>
    </Grid>

@@ -58,7 +58,10 @@ public sealed partial class AddDownloadDialog : ContentDialog
    {
     var result = (await core.SendAsync(HttpMethod.Post, "resolve", BuildRequest(links[0])))!;
     resolved = result["id"]!.GetValue<string>(); var resource = result["res"]!;
-    Preview.Text = $"{resource["name"]?.GetValue<string>()}\n{DownloadItem.FormatBytes(resource["size"]!.GetValue<long>())}";
+    var displayName = resource["name"]?.GetValue<string>();
+    if (string.IsNullOrEmpty(displayName)) displayName = resource["files"]!.AsArray()[0]!["name"]!.GetValue<string>();
+    var size = resource["size"]!.GetValue<long>();
+    Preview.Text = $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
     Files.Items.Clear(); foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(file!["name"]!.GetValue<string>());
     Files.SelectAll(); Files.Visibility = Files.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
     PrimaryButtonText = "開始下載";
