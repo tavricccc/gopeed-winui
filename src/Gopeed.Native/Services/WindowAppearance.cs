@@ -13,7 +13,4 @@ public static class WindowAppearance
         }
     }
     public static void SetIcon(Window window) => window.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
-    public static void InitializeProcess() => SetCurrentProcessExplicitAppUserModelID("Tavric.GopeedNative");
-    [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
 }

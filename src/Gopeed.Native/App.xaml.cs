@@ -42,7 +42,6 @@ public partial class App : Application
     /// </summary>
     public App()
     {
-        Services.WindowAppearance.InitializeProcess();
         InitializeComponent();
         UnhandledException += (_, e) =>
         {

@@ -24,8 +24,8 @@ LicenseFile=..\upstream\LICENSE
 Source: "..\artifacts\portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"; AppUserModelID: "Tavric.GopeedNative"
-Name: "{autodesktop}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"; Tasks: desktopicon; AppUserModelID: "Tavric.GopeedNative"
+Name: "{group}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"
+Name: "{autodesktop}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"; Tasks: desktopicon
 
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\gopeed"; ValueType: string; ValueName: ""; ValueData: "URL:Gopeed Native Protocol"; Flags: uninsdeletekey

@@ -4,6 +4,8 @@ using Microsoft.UI.Xaml.Media;
 using Gopeed_Native.Models;
 using Gopeed_Native.Services;
 using System.Net.Http;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
 
 namespace Gopeed_Native.Views;
 
@@ -19,6 +21,7 @@ public sealed class DownloadProgressPage : Page
     private readonly TextBlock status = new();
     private readonly ProgressBar progress = new() { Maximum = 100 };
     private readonly TextBlock transfer = new();
+    private readonly TextBlock dragHint = new() { Text = "可拖曳檔名，將檔案放到資料夾或其他應用程式。", TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock source = new() { TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
     private readonly TextBlock folder = new() { TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
     private readonly Button primary = NativeButtons.Create("正在連接…", "\uE896", true);
@@ -35,6 +38,8 @@ public sealed class DownloadProgressPage : Page
         this.core = core; this.id = id; this.close = close;
         heading.Style = (Style)Application.Current.Resources["TitleTextBlockStyle"];
         name.Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"];
+        name.DragStarting += DragFile;
+        dragHint.Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"];
         primary.IsEnabled = false;
         closeAfterOpen.IsChecked = UiPreferences.Load().CloseProgressAfterOpen;
         closeAfterOpen.Checked += SaveClosePreference; closeAfterOpen.Unchecked += SaveClosePreference;
@@ -44,7 +49,7 @@ public sealed class DownloadProgressPage : Page
         var content = new StackPanel { Spacing = 16 };
         content.Children.Add(error);
         content.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { stateIcon, heading } });
-        foreach (var element in new UIElement[] { name, status, progress, transfer,
+        foreach (var element in new UIElement[] { name, dragHint, status, progress, transfer,
             new TextBlock { Text = "儲存位置", Style = (Style)Application.Current.Resources["BodyStrongTextBlockStyle"] }, folder, closeAfterOpen, details }) content.Children.Add(element);
         content.Children.Add(new TextBlock { Text = "關閉視窗仍會繼續下載。", Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"] });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -56,7 +61,7 @@ public sealed class DownloadProgressPage : Page
         primary.Click += async (_, _) => await PrimaryAction();
         browse.Click += (_, _) => { try { if (item is not null) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception e) { ShowError(e); } };
         timer.Tick += async (_, _) => await Refresh();
-        Loaded += async (_, _) => { await Refresh(); timer.Start(); }; Unloaded += (_, _) => Stop();
+        Loaded += async (_, _) => { timer.Start(); await Refresh(); }; Unloaded += (_, _) => Stop();
     }
     private async Task Refresh()
     {
@@ -70,12 +75,14 @@ public sealed class DownloadProgressPage : Page
             stateIcon.Glyph = item.IsComplete ? "\uE73E" : item.Status == "error" ? "\uE783" : "\uE896";
             stateIcon.Foreground = (Brush)Application.Current.Resources[item.IsComplete ? "SystemFillColorSuccessBrush" : "TextFillColorSecondaryBrush"];
             name.Text = item.Name; status.Text = item.IsComplete ? "檔案已儲存，可直接開啟或在資料夾中顯示。" : $"{item.Percent:0.0}% · {item.Protocol}";
+            name.CanDrag = item.IsComplete; dragHint.Visibility = item.IsComplete ? Visibility.Visible : Visibility.Collapsed;
             progress.Value = item.Percent; progress.IsIndeterminate = item.IsIndeterminate; progress.Visibility = item.IsComplete ? Visibility.Collapsed : Visibility.Visible;
             transfer.Text = item.IsComplete ? $"大小：{item.SizeText}" : $"{item.TransferText} · {item.SpeedText} · 剩餘 {item.RemainingText}";
             folder.Text = item.FilePath; source.Text = item.Url;
             closeAfterOpen.Visibility = item.IsComplete ? Visibility.Visible : Visibility.Collapsed;
             NativeButtons.SetContent(browse, item.IsComplete ? "在資料夾中顯示" : "儲存資料夾", "\uE8B7");
             if (lastStatus != item.Status) { details.IsExpanded = item.Status == "error"; lastStatus = item.Status; }
+            if (item.IsComplete) timer.Stop();
         }
         catch (Exception e) { ShowError(e); }
         finally { refreshing = false; }
@@ -94,6 +101,18 @@ public sealed class DownloadProgressPage : Page
         finally { primary.IsEnabled = true; }
     }
     private void SaveClosePreference(object sender, RoutedEventArgs e) { var prefs = UiPreferences.Load(); prefs.CloseProgressAfterOpen = closeAfterOpen.IsChecked == true; prefs.Save(); }
+    private async void DragFile(UIElement sender, DragStartingEventArgs args)
+    {
+        if (item is not { IsComplete: true }) { args.Cancel = true; return; }
+        var deferral = args.GetDeferral();
+        try
+        {
+            IStorageItem file = Directory.Exists(item.FilePath) ? await StorageFolder.GetFolderFromPathAsync(item.FilePath) : await StorageFile.GetFileFromPathAsync(item.FilePath);
+            args.Data.SetStorageItems([file]); args.Data.RequestedOperation = DataPackageOperation.Copy; args.AllowedOperations = DataPackageOperation.Copy;
+        }
+        catch (Exception error) { args.Cancel = true; ShowError(error); }
+        finally { deferral.Complete(); }
+    }
     public void Stop() => timer.Stop();
     private void ShowError(Exception e) { error.Message = e.Message; error.IsOpen = true; }
 }

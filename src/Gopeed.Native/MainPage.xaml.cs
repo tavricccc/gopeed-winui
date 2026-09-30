@@ -93,17 +93,23 @@ public sealed partial class MainPage : Page
  private void DownloadDragOver(object s, DragEventArgs e) { e.AcceptedOperation = e.DataView.Contains(StandardDataFormats.Text) || e.DataView.Contains(StandardDataFormats.WebLink) || e.DataView.Contains(StandardDataFormats.StorageItems) ? DataPackageOperation.Copy : DataPackageOperation.None; }
  private async void DownloadDrop(object s, DragEventArgs e)
  {
+  var deferral = e.GetDeferral();
+  string? text = null;
+  System.Text.Json.Nodes.JsonObject? parameters = null;
   try
   {
-   if (e.DataView.Contains(StandardDataFormats.WebLink)) await AddText((await e.DataView.GetWebLinkAsync()).AbsoluteUri);
-   else if (e.DataView.Contains(StandardDataFormats.Text)) await AddText(await e.DataView.GetTextAsync());
+   if (e.DataView.Contains(StandardDataFormats.WebLink)) text = (await e.DataView.GetWebLinkAsync()).AbsoluteUri;
+   else if (e.DataView.Contains(StandardDataFormats.Text)) text = await e.DataView.GetTextAsync();
    else if (e.DataView.Contains(StandardDataFormats.StorageItems))
    {
     var files = await e.DataView.GetStorageItemsAsync();
     if (files.Count == 0 || files.Any(f => !f.Path.EndsWith(".torrent", StringComparison.OrdinalIgnoreCase))) throw new FormatException("拖放檔案目前接受 torrent 檔案。");
-    await AddDownloadAsync(new System.Text.Json.Nodes.JsonObject { ["req"] = new System.Text.Json.Nodes.JsonObject { ["url"] = string.Join("\n", files.Select(f => f.Path)) } });
+    parameters = new System.Text.Json.Nodes.JsonObject { ["req"] = new System.Text.Json.Nodes.JsonObject { ["url"] = string.Join("\n", files.Select(f => f.Path)) } };
    }
   }
+  catch (Exception ex) { ViewModel.Error = ex.Message; return; }
+  finally { deferral.Complete(); }
+  try { if (parameters is not null) await AddDownloadAsync(parameters); else if (text is not null) await AddText(text); }
   catch (Exception ex) { ViewModel.Error = ex.Message; }
  }
  private async void DeleteSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) await DeleteAsync(item); }
