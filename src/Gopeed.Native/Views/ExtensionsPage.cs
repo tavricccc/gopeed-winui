@@ -13,9 +13,9 @@ public sealed class ExtensionsPage : Page
  private readonly StackPanel list = new() { Spacing = 16 };
  private readonly InfoBar message = new() { IsClosable = true };
  private readonly TextBox url = new() { Header = "擴充功能 Git repository", PlaceholderText = "https://github.com/owner/gopeed-extension", MinWidth = 320 };
- public ExtensionsPage(DownloadsViewModel viewModel)
+ public ExtensionsPage(DownloadsViewModel viewModel, string? repository = null)
  {
-  vm = viewModel;
+  vm = viewModel; url.Text = repository ?? "";
   var panel = new StackPanel { Spacing = 20, MaxWidth = 800, HorizontalAlignment = HorizontalAlignment.Left };
   panel.Children.Add(new TextBlock { Text = "擴充功能", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] });
   panel.Children.Add(new TextBlock { Text = "讓 Gopeed 解析更多下載來源。擴充功能會在本機執行程式碼，請選擇你信任的專案。", TextWrapping = TextWrapping.Wrap }); panel.Children.Add(message); panel.Children.Add(url);

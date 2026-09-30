@@ -36,7 +36,7 @@ public sealed class SettingsPage : Page
   content.Children.Add(new TextBlock { Text = "背景下載", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
   content.Children.Add(new TextBlock { Text = "關閉視窗會釋放前端記憶體，下載核心仍繼續執行。再次開啟即可接回佇列。", TextWrapping = TextWrapping.Wrap });
   var stop = new Button { Content = "停止下載核心並結束" }; stop.Click += async (_, _) => { var dialog = new ContentDialog { Title = "停止所有背景下載？", Content = "下載進度會保存，下一次開啟可繼續。", PrimaryButtonText = "停止並結束", CloseButtonText = "取消", XamlRoot = XamlRoot }; if (await Gopeed_Native.Services.NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) { try { await vm.Core.StopAsync(); App.Window.Close(); } catch (Exception ex) { Error(ex); } } }; content.Children.Add(stop);
-  content.Children.Add(new TextBlock { Text = "Gopeed Native 0.1.0 · Gopeed 核心 1.9.3 · GPL-3.0\n獨立 WinUI 3 前端，非 Gopeed 官方版本。", TextWrapping = TextWrapping.Wrap });
+  content.Children.Add(new TextBlock { Text = $"Gopeed Native {typeof(App).Assembly.GetName().Version?.ToString(3)} · Gopeed 核心 1.9.3 · GPL-3.0\n獨立 WinUI 3 前端，非 Gopeed 官方版本。", TextWrapping = TextWrapping.Wrap });
   var surface = new Grid(); surface.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1,GridUnitType.Star) }); surface.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
   surface.Children.Add(new ScrollViewer { Content = content, Padding = new Thickness(0,0,16,24), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
   Grid.SetRow(save,1); surface.Children.Add(save); Content = surface;

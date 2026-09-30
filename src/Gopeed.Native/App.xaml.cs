@@ -65,7 +65,20 @@ public partial class App : Application
         }
         Window = new MainWindow();
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-        instance.Activated += (_, _) => DispatcherQueue.TryEnqueue(() => Window.Activate());
+        instance.Activated += (_, activation) => DispatcherQueue.TryEnqueue(() => HandleActivation(activation));
         Window.Activate();
+        HandleActivation(AppInstance.GetCurrent().GetActivatedEventArgs());
+    }
+
+    private void HandleActivation(AppActivationArguments activation)
+    {
+        Window.Activate();
+        var link = activation.Data switch
+        {
+            Windows.ApplicationModel.Activation.IProtocolActivatedEventArgs protocol => protocol.Uri.AbsoluteUri,
+            Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs launch => Services.GopeedLink.FromCommandLine(launch.Arguments),
+            _ => null
+        };
+        if (link is not null) ((MainWindow)Window).OpenProtocol(link);
     }
 }

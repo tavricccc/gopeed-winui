@@ -12,10 +12,20 @@ public sealed partial class AddDownloadDialog : ContentDialog
 {
  private readonly CoreClient core;
  private string? resolved;
- public AddDownloadDialog(CoreClient core)
+ private readonly JsonObject? initial;
+ public AddDownloadDialog(CoreClient core, JsonObject? initial = null)
  {
-  this.core = core; InitializeComponent();
-  Loaded += async (_, _) => { try { var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? ""; if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"); } catch (Exception e) { ShowError(e); } };
+  this.core = core; this.initial = initial; InitializeComponent();
+  Loaded += async (_, _) => { try { var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? ""; if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"); ApplyInitial(); } catch (Exception e) { ShowError(e); } };
+ }
+ private void ApplyInitial()
+ {
+  if (initial is null) return;
+  Links.Text = initial["req"]?["url"]?.GetValue<string>() ?? "";
+  if (initial["opts"]?["path"]?.GetValue<string>() is { Length: > 0 } path) Destination.Text = path;
+  FileName.Text = initial["opts"]?["name"]?.GetValue<string>() ?? "";
+  if (initial["opts"]?["extra"]?["connections"] is JsonValue connections) Connections.Value = connections.GetValue<int>();
+  if (initial["req"]?["extra"]?["header"] is JsonObject headers) Headers.Text = string.Join("\n", headers.Select(pair => $"{pair.Key}: {pair.Value}"));
  }
  private void InputChanged(object s, TextChangedEventArgs e) { resolved = null; var count = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length; PrimaryButtonText = count > 1 ? $"開始 {count} 個下載" : "檢查連結"; if (Files is not null) Files.Visibility = Visibility.Collapsed; }
  private async void PickFolder(object s, RoutedEventArgs e)
@@ -36,7 +46,18 @@ public sealed partial class AddDownloadDialog : ContentDialog
    var separator = line.IndexOf(':'); if (separator < 1) throw new FormatException("HTTP 標頭請使用「名稱: 值」格式。");
    headers[line[..separator].Trim()] = line[(separator + 1)..].Trim();
   }
-  return new JsonObject { ["req"] = new JsonObject { ["url"] = url, ["extra"] = new JsonObject { ["header"] = headers } }, ["opts"] = new JsonObject { ["path"] = Destination.Text.Trim(), ["name"] = FileName.Text.Trim(), ["extra"] = new JsonObject { ["connections"] = (int)Connections.Value } } };
+  var request = initial?.DeepClone().AsObject() ?? new JsonObject();
+  var req = request["req"] as JsonObject ?? new JsonObject();
+  var requestExtra = req["extra"] as JsonObject ?? new JsonObject();
+  var opts = request["opts"] as JsonObject ?? new JsonObject();
+  var optionExtra = opts["extra"] as JsonObject ?? new JsonObject();
+  requestExtra["header"] = headers; req["url"] = url;
+  if (req["extra"] is null) req["extra"] = requestExtra;
+  optionExtra["connections"] = (int)Connections.Value; opts["path"] = Destination.Text.Trim(); opts["name"] = FileName.Text.Trim();
+  if (opts["extra"] is null) opts["extra"] = optionExtra;
+  if (request["req"] is null) request["req"] = req;
+  if (request["opts"] is null) request["opts"] = opts;
+  return request;
  }
  private async void Submit(ContentDialog sender, ContentDialogButtonClickEventArgs args)
  {

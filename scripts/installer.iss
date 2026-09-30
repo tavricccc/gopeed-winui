@@ -1,4 +1,4 @@
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 [Setup]
 AppId={{B652BEF3-0741-4B5E-9066-C6F3EBF18622}
 AppName=Gopeed Native
@@ -10,7 +10,7 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\artifacts
-OutputBaseFilename=GopeedNative-Setup-0.1.0-x64
+OutputBaseFilename=GopeedNative-Setup-{#AppVersion}-x64
 SetupIconFile=..\src\Gopeed.Native\Assets\AppIcon.ico
 UninstallDisplayIcon={app}\Gopeed.Native.exe
 Compression=lzma2
@@ -27,6 +27,12 @@ Source: "..\artifacts\portable\*"; DestDir: "{app}"; Flags: ignoreversion recurs
 Name: "{group}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"
 Name: "{autodesktop}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"; Tasks: desktopicon
 
+[Registry]
+Root: HKCU; Subkey: "Software\Classes\gopeed"; ValueType: string; ValueName: ""; ValueData: "URL:Gopeed Native Protocol"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\gopeed"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\gopeed\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\Gopeed.Native.exe,0"
+Root: HKCU; Subkey: "Software\Classes\gopeed\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\Gopeed.Native.exe"" ""%1"""
+
 [Tasks]
 Name: "desktopicon"; Description: "建立桌面捷徑"; Flags: unchecked
 
@@ -34,7 +40,7 @@ Name: "desktopicon"; Description: "建立桌面捷徑"; Flags: unchecked
 Filename: "{app}\Gopeed.Native.exe"; Description: "開啟 Gopeed Native"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-Filename: "{app}\Engine\gopeed-core.exe"; Parameters: "--data ""{localappdata}\GopeedNative"" --shutdown"; Flags: runhidden waituntilterminated
+Filename: "{app}\Engine\gopeed-core.exe"; Parameters: "--data ""{localappdata}\GopeedNative"" --shutdown"; Flags: runhidden waituntilterminated; RunOnceId: "StopNativeCore"
 
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;

@@ -14,6 +14,8 @@ public sealed partial class MainPage : Page
  public DownloadsViewModel ViewModel { get; } = new();
  private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(1) };
  private bool refreshing;
+ private readonly TaskCompletionSource ready = new();
+ private readonly SemaphoreSlim addDialogGate = new(1);
  public MainPage()
  {
   InitializeComponent(); Loaded += Start;
@@ -29,12 +31,36 @@ public sealed partial class MainPage : Page
   ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Selected)) { SelectionDetails.Visibility = ViewModel.HasSelection ? Visibility.Visible : Visibility.Collapsed; DetailsHint.Visibility = ViewModel.HasSelection ? Visibility.Collapsed : Visibility.Visible; } };
   timer.Tick += async (_, _) => { if (refreshing || !ViewModel.IsConnected) return; refreshing = true; await ViewModel.RefreshAsync(); refreshing = false; };
  }
- private async void Start(object sender, RoutedEventArgs e) { Loaded -= Start; await ViewModel.InitializeAsync(); timer.Start(); }
+ private async void Start(object sender, RoutedEventArgs e) { Loaded -= Start; await ViewModel.InitializeAsync(); timer.Start(); ready.SetResult(); }
  private async void AddDownload(object sender, RoutedEventArgs e)
  {
-  if (!ViewModel.IsConnected) return; timer.Stop();
-  try { await NativeDialogs.ShowAsync(new AddDownloadDialog(ViewModel.Core), XamlRoot); await ViewModel.RefreshAsync(); }
-  catch (Exception error) { ViewModel.Error = error.Message; } finally { timer.Start(); }
+  await AddDownloadAsync(null);
+ }
+ private async Task AddDownloadAsync(System.Text.Json.Nodes.JsonObject? parameters)
+ {
+  await ready.Task;
+  if (!ViewModel.IsConnected) return;
+  await addDialogGate.WaitAsync(); timer.Stop();
+  try { await NativeDialogs.ShowAsync(new AddDownloadDialog(ViewModel.Core, parameters), XamlRoot); await ViewModel.RefreshAsync(); }
+  catch (Exception error) { ViewModel.Error = error.Message; } finally { timer.Start(); addDialogGate.Release(); }
+ }
+ public async void OpenProtocol(string value)
+ {
+  try
+  {
+   var link = GopeedLink.Parse(value); await ready.Task;
+   if (link.Route == "extension")
+   {
+    Navigation.SelectedItem = Navigation.MenuItems.OfType<NavigationViewItem>().First(i => i.Tag?.ToString() == "extensions");
+    SettingsFrame.Content = new ExtensionsPage(ViewModel, link.Parameters?["url"]?.GetValue<string>());
+   }
+   else
+   {
+    Navigation.SelectedItem = Navigation.MenuItems.OfType<NavigationViewItem>().First(i => i.Tag?.ToString() == "downloads");
+    if (link.Route == "create") await AddDownloadAsync(link.Parameters);
+   }
+  }
+  catch (Exception error) { ViewModel.Error = $"無法開啟 Gopeed 連結：{error.Message}"; }
  }
  private void FilterChanged(object s, SelectionChangedEventArgs e) { if (FilterBox?.SelectedItem is ComboBoxItem item) { ViewModel.Filter = item.Tag.ToString()!; ViewModel.ApplyFilter(); } }
  private void SearchChanged(AutoSuggestBox s, AutoSuggestBoxTextChangedEventArgs e) { ViewModel.Search = s.Text; ViewModel.ApplyFilter(); }
