@@ -67,7 +67,11 @@ components:
 - 單一系統重點色，淺色與深色同步。
 - 窄視窗保留操作，以對話框顯示完整詳情。
 
-記錄依據：0.2.0 的 `src/Gopeed.Native` 實作與 WinUI NuGet 套件 `Microsoft.WindowsAppSDK.WinUI` 2.3.9 的 `lib/native/Microsoft.UI/Themes/generic.xaml`。`work/v02-main-visible.png` 是目前有效的主清單視覺證據，可確認檔案類型圖示、未選取時的停用主動作與原生版面；既有 `.impeccable/review/` 圖片只記錄前一版設計。其餘 0.2.0 完成／暫停／確認舊圖是空白，不採為證據。以下行為依實作來源記錄，不等於互動、Narrator、高對比或記憶體效能已驗證。
+記錄依據：0.2.0 的 `src/Gopeed.Native` 實作與 WinUI NuGet 套件 `Microsoft.WindowsAppSDK.WinUI` 2.3.9 的 `lib/native/Microsoft.UI/Themes/generic.xaml`。`docs/images/native-main.png` 是有效主清單視覺證據，確認檔案類型圖示、未選取時的停用主動作與原生版面；既有 `.impeccable/review/` 圖片只記錄前一版設計。
+
+依 `docs/verification-0.2.0.md`，HTTP 入口、確認／取消及完成操作已有 UIA／API 核對：確認與取消前不建立任務，開始後同窗轉進度及完成；完成窗的「開啟檔案」與「在資料夾中顯示」可見且啟用，觸發開啟及勾選關閉選項後關閉進度窗。ZIP 與文字 loopback 測試檔 SHA-256 與來源一致，Explorer 定位實測在 release-demo 資料夾選取 `Gopeed UI 驗證.zip`。完成 Open／暫停 Resume／錯誤 Retry／下載中 Pause 的狀態映射另有 C# 檢查；核心暫停、重啟及續傳有測試證據，不能延伸為每個前端狀態都做過像素驗證。
+
+impeccable finish review 結論為 **ship**，範圍限來源、有效主窗截圖與上述 UIA／API 證據。新完成／確認 WGC 白色圖與其他空白圖不採為證據，後續工具無法將視窗帶至前景；完成及確認頁沒有像素驗證。外部檔案 handler 的內容載入、跨應用程式拖放、Narrator、高對比、Windows 10、BT/eD2k 真實網路與第三方擴充功能尚未完成端到端驗證；不宣稱 RAM 節省。
 
 ## Colors
 
@@ -135,7 +139,7 @@ WinUI 基本控制項使用 `ControlCornerRadius`，浮出層使用 `OverlayCorn
 
 主清單可從剪貼簿文字、拖入 WebLink／文字連結或 torrent 檔案開啟新增表單；文字接受 HTTP、HTTPS、magnet、file 絕對 URI。儲存項目拖入目前只接受 torrent。清單命令與進度窗詳情可複製下載連結。這些入口都先讓使用者確認，不把一般檔案拖入誤當下載來源。
 
-外部 `create` protocol 或 `--download-request` activation 直接開獨立確認窗，不強制建立或喚起主清單；一般啟動與 extension 路由仍開主視窗。activation 處理錯誤會在主視窗顯示錯誤。`WindowAppearance` 統一提供已保存主題及部署目錄的 `Assets/AppIcon.ico`，主窗與下載窗共用。
+外部 `create` protocol 或 `--download-request` activation 直接開獨立確認窗，不強制建立或喚起主清單；一般啟動與 extension 路由仍開主視窗。activation 處理錯誤會在主視窗顯示錯誤。`App` 保留下載視窗的強引用，在 `Closed` 移除；主窗與所有下載窗都關閉時才解除單一實例 key（修正 `5fee56b`），避免關閉與外部請求交接時遺失下載窗。`WindowAppearance` 統一提供已保存主題及部署目錄的 `Assets/AppIcon.ico`，主窗與下載窗共用。
 
 - **主要按鈕**：原生 Button + `AccentButtonStyle`，用於新增下載、安裝擴充功能、儲存設定。hover、pressed、focus、disabled 全由原生範本。新增下載在核心未連線時停用。
 - **命令列與內容功能表**：原生 CommandBar、AppBarButton、MenuFlyout；主清單第一個 accent 動作與進度窗共用同一狀態映射，完成時優先「開啟檔案」。右鍵功能表第一項同樣是當前主動作；另保留暫停、繼續／重試與資料夾命令。沒有選取時，選取項目的命令停用。

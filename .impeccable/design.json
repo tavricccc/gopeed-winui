@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-30T19:28:01Z",
+  "generatedAt": "2026-09-30T19:49:22Z",
   "title": "Design System: Gopeed Native",
   "extensions": {
     "platform": "Windows desktop / WinUI 3",
@@ -76,11 +76,14 @@
       { "source": "Microsoft.WindowsAppSDK.WinUI.CSharp.Templates", "scaffold": "winapp 0.7.0 new --name Gopeed.Native --template winui-mvvm --template-version latest --use-defaults", "assets": ["SplashScreen.scale-200.png", "Wide310x150Logo.scale-200.png"], "usage": "官方範本素材；保留為 Content，目前 unpackaged 介面未使用。" },
       { "source": "Microsoft.WindowsAppSDK.WinUI runtime", "assets": ["Microsoft.UI.Xaml/Assets/NoiseAsset_256x256_PNG.png"], "usage": "Mica 平台材質，隨 runtime 打包。" }
     ],
-    "reviewEvidence": ["work/v02-main-visible.png"],
+    "reviewEvidence": ["docs/images/native-main.png", "docs/verification-0.2.0.md"],
     "previousVersionEvidence": [".impeccable/review/desktop.png", ".impeccable/review/dark.png", ".impeccable/review/compact.png", ".impeccable/review/settings.png", ".impeccable/review/extensions.png", ".impeccable/review/add-dialog.png", ".impeccable/review/delete-dialog.png"],
     "preferences": { "source": "Services/UiPreferences.cs", "storage": "preferences.json", "rememberDirectory": "預設開啟；成功建立後保存最後位置，表單載入優先於核心預設，外部明確指定位置再覆蓋。", "closeAfterOpen": "預設開啟，完成才顯示；按開啟成功後關閉，不是完成即自動關閉。" },
     "inputFlows": { "clipboard": "主清單文字連結開啟新增表單；HTTP、HTTPS、magnet、file 絕對 URI。", "drop": "WebLink／文字連結或 torrent StorageItems 開啟新增表單；一般檔案不接受。", "activation": "create protocol／pending download request 直接開獨立確認窗；一般啟動及 extension 路由仍開主窗，錯誤也在主窗回報。", "icons": "WindowAppearance.SetIcon 在主窗與下載窗載入部署目錄 Assets/AppIcon.ico。" },
-    "verificationLimits": ["0.2.0 行為依實作來源記錄；有效主清單截圖只確認圖示、未選取按鈕及版面。", "舊 v02 完成／暫停／確認空白截圖不採為證據；新完成與暫停視覺及互動驗證待 finish review。", "未宣稱 Narrator 或高對比已實測。", "未宣稱 RAM 節省；沒有性能推估。", "SDK 基準與來源資源優先於截圖取色。"]
+    "lifetime": { "source": "App.xaml.cs", "revision": "5fee56b", "description": "保留下載視窗強引用，Closed 後移除；主窗與所有下載窗皆關閉時才解除單一實例 key，避免關閉期間的請求交接遺失。" },
+    "finishReview": { "verdict": "ship", "scope": "實作來源、有效主窗截圖與 UIA／API 證據；不是全面像素或跨應用程式驗證。", "record": "docs/verification-0.2.0.md" },
+    "behaviorEvidence": ["HTTP 入口只開確認窗，確認與取消前 API 任務數不變；開始後同窗轉進度及完成。", "UIA 確認完成窗第一個開啟檔案與第二個在資料夾中顯示可見且啟用；觸發開啟並勾選關閉選項後進度窗關閉。", "ZIP 與文字 loopback 測試檔 SHA-256 與來源一致。", "Explorer 定位實測於 release-demo 資料夾選取 Gopeed UI 驗證.zip，包含空白及中文檔名。", "C# 檢查狀態映射：完成 Open／暫停 Resume／錯誤 Retry／下載中 Pause；核心測試暫停、重啟、續傳。"],
+    "verificationLimits": ["有效主清單截圖確認圖示、未選取按鈕及版面。", "新完成／確認 WGC 白色圖與其他空白圖不採為證據，後續工具無法使視窗到前景；完成與確認沒有像素驗證。", "外部檔案 handler 內容載入、跨應用程式拖放、Narrator、高對比未驗證。", "Windows 10、BT/eD2k 真實網路及第三方擴充功能未完成端到端驗證。", "未宣稱 RAM 節省；沒有性能推估。", "SDK 基準與來源資源優先於截圖取色。"]
   },
   "components": [],
   "narrative": {
