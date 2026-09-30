@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-30T15:36:15Z",
+  "title": "Design System: Gopeed Native",
+  "extensions": {
+    "platform": "Windows desktop / WinUI 3",
+    "units": "DIP；視窗建立時依 DPI 轉換為像素。",
+    "sourceOfTruth": [
+      "src/Gopeed.Native/App.xaml",
+      "src/Gopeed.Native/MainWindow.xaml",
+      "src/Gopeed.Native/MainWindow.xaml.cs",
+      "src/Gopeed.Native/MainPage.xaml",
+      "src/Gopeed.Native/MainPage.xaml.cs",
+      "src/Gopeed.Native/Views/SettingsPage.cs",
+      "src/Gopeed.Native/Views/ExtensionsPage.cs",
+      "src/Gopeed.Native/Views/AddDownloadDialog.xaml",
+      "src/Gopeed.Native/Views/AddDownloadDialog.xaml.cs",
+      "src/Gopeed.Native/Services/NativeDialogs.cs",
+      "Microsoft.WindowsAppSDK.WinUI 2.3.9 / lib/native/Microsoft.UI/Themes/generic.xaml"
+    ],
+    "colorMeta": {
+      "icon-blue": { "role": "primary", "displayName": "下載圖示藍", "purpose": "僅供程式生成的應用程式圖示；不是固定 UI 重點色。" },
+      "icon-white": { "role": "neutral", "displayName": "圖示箭頭白", "purpose": "下載箭頭與底線。" }
+    },
+    "nativeThemeResources": [
+      { "resource": "AccentButtonStyle", "purpose": "主要行動；完整 hover、pressed、focus、disabled 狀態由平台處理。" },
+      { "resource": "TextFillColorSecondaryBrush", "purpose": "次要說明、傳輸量、速度、欄位名稱與底部摘要。" },
+      { "resource": "LayerFillColorDefaultBrush", "purpose": "CommandBar 背景層。" },
+      { "resource": "ControlFillColorTransparentBrush", "purpose": "清單內容透明，保留 ListViewItem 原生選取與焦點呈現。" },
+      { "resource": "ContentControlThemeFontFamily / XamlAutoFontFamily", "purpose": "由 Windows 依系統與文字語系選擇字型。" },
+      { "resource": "ControlCornerRadius / OverlayCornerRadius", "purpose": "基本控制項與浮出層形狀；基準值在 DESIGN.md frontmatter。" }
+    ],
+    "typographyMeta": {
+      "title": { "displayName": "頁標題", "purpose": "TitleTextBlockStyle：下載、設定、擴充功能。" },
+      "subtitle": { "displayName": "區段標題", "purpose": "SubtitleTextBlockStyle：詳情、設定區段、擴充功能名稱、空佇列。" },
+      "body": { "displayName": "內文", "purpose": "原生 TextBlock／BodyTextBlockStyle：標籤、狀態與長內容。" },
+      "body-strong": { "displayName": "檔名", "purpose": "BodyStrongTextBlockStyle：下載名稱。" },
+      "caption": { "displayName": "摘要", "purpose": "CaptionTextBlockStyle：傳輸量、速度與底部摘要。" }
+    },
+    "shadows": [],
+    "motion": [],
+    "elevation": { "native": ["MicaBackdrop", "ContentDialog", "MenuFlyout"], "purpose": "平台材質、主題層與原生遮罩；沒有自訂陰影或動畫 token。" },
+    "breakpoints": [
+      { "name": "details-column", "value": "1000dip", "behavior": "頁寬達門檻顯示右側詳情；低於門檻以詳細資訊 ContentDialog 開啟。" },
+      { "name": "minimum-window", "value": "640dip", "behavior": "最小視窗寬度；最小高度 480 DIP。" }
+    ],
+    "nativeComponents": [
+      { "name": "主要按鈕", "kind": "button", "refersTo": "button-primary", "source": "MainPage.xaml / SettingsPage.cs / ExtensionsPage.cs", "control": "Button", "style": "AccentButtonStyle", "states": ["normal", "pointer-over", "pressed", "keyboard-focus", "disabled"], "description": "使用原生範本和系統重點色；新增下載於核心未連線時停用。" },
+      { "name": "下載列", "kind": "custom", "refersTo": "download-row", "source": "MainPage.xaml", "control": "ListViewItem + TextBlock + ProgressBar", "states": ["normal", "pointer-over", "selected", "keyboard-focus", "determinate", "indeterminate"], "description": "三列資訊、文字狀態、原生進度；保留選取與焦點範本。" },
+      { "name": "搜尋欄", "kind": "input", "refersTo": "download-search", "source": "MainPage.xaml", "control": "AutoSuggestBox", "description": "Header 搜尋、提示檔名或網址、Find 圖示；Ctrl+F 聚焦。" },
+      { "name": "頂部導覽", "kind": "nav", "source": "MainPage.xaml", "control": "NavigationView", "description": "PaneDisplayMode Top；下載、擴充功能及內建設定入口；平台處理選取指示與 overflow。" },
+      { "name": "命令列", "kind": "custom", "source": "MainPage.xaml", "control": "CommandBar + AppBarButton", "description": "依下載選取與狀態啟用命令，次要操作置於 overflow；DefaultLabelPosition Right。" },
+      { "name": "新增下載", "kind": "custom", "source": "Views/AddDownloadDialog.xaml", "control": "ContentDialog", "description": "單一連結檢查再開始；批次顯示數量；InfoBar 回報錯誤，忙碌時 ProgressRing 及停用主按鈕。" },
+      { "name": "移除下載", "kind": "custom", "source": "MainPage.xaml.cs", "control": "ContentDialog + CheckBox", "description": "預設取消；刪除實體檔案預設未勾選；使用 NativeDialogs 同步實際主題。" }
+    ],
+    "previewPolicy": "原生 WinUI 3 為設計權威。components 保留為空，不建立 HTML/CSS 仿製控制項；nativeComponents 記錄實際原生元件。沒有為固定圖示色生成未實作的 tonal ramp。",
+    "assetProvenance": [
+      { "source": "scripts/create_icon.py", "method": "Pillow 程式繪圖，4× 採樣後 Lanczos 縮圖", "assets": ["AppIcon.ico", "Square44x44Logo.scale-200.png", "Square44x44Logo.targetsize-24_altform-unplated.png", "Square44x44Logo.targetsize-48_altform-lightunplated.png", "Square150x150Logo.scale-200.png", "StoreLogo.png", "LockScreenLogo.scale-200.png"], "externalImage": false, "aiGenerated": false },
+      { "source": "Microsoft.WindowsAppSDK.WinUI.CSharp.Templates", "scaffold": "winapp 0.7.0 new --name Gopeed.Native --template winui-mvvm --template-version latest --use-defaults", "assets": ["SplashScreen.scale-200.png", "Wide310x150Logo.scale-200.png"], "usage": "官方範本素材；保留為 Content，目前 unpackaged 介面未使用。" },
+      { "source": "Microsoft.WindowsAppSDK.WinUI runtime", "assets": ["Microsoft.UI.Xaml/Assets/NoiseAsset_256x256_PNG.png"], "usage": "Mica 平台材質，隨 runtime 打包。" }
+    ],
+    "reviewEvidence": [".impeccable/review/desktop.png", ".impeccable/review/dark.png", ".impeccable/review/compact.png", ".impeccable/review/settings.png", ".impeccable/review/extensions.png", ".impeccable/review/add-dialog.png", ".impeccable/review/delete-dialog.png"],
+    "verificationLimits": ["來源與截圖確認，非完整互動測試報告。", "未宣稱 Narrator 或高對比已實測。", "未宣稱 RAM 節省；沒有性能推估。", "SDK 基準與來源資源優先於截圖取色。"]
+  },
+  "components": [],
+  "narrative": {
+    "northStar": "Windows 下載工作佇列",
+    "overview": "以 Windows Fluent 原生控制項呈現下載狀態、進度與下一步操作。畫面資訊密度服務於工作佇列：上方導覽、平面下載清單、依選取項目啟用的命令與詳細資訊；不加入儀表板數字或裝飾性卡片。\n\n介面由 WinUI 3 的 XamlControlsResources、ThemeResource 與控制項範本建立。繁體中文標籤與清楚的文字狀態是主要資訊，圖示及系統重點色輔助辨識。主題、字型、焦點、停用與浮出視窗外觀優先交由平台處理。",
+    "keyCharacteristics": ["原生 Fluent、Mica 視窗背景與頂部導覽。", "平面清單、可讀的進度與文字狀態。", "單一系統重點色，淺色與深色同步。", "窄視窗保留操作，以對話框顯示完整詳情。"],
+    "rules": [{ "name": "The Theme Resource Rule", "body": "新增介面應沿用平台資源，不從截圖取色後覆蓋 WinUI 的完整狀態範本。所有 ContentDialog 經 NativeDialogs.ShowAsync 將 RequestedTheme 同步為視窗實際主題。", "section": "colors" }],
+    "dos": ["Do 沿用原生 WinUI 控制項、ThemeResource 與完整互動狀態。", "Do 用繁體中文文字描述狀態、錯誤與操作結果。", "Do 在窄視窗保留詳情命令與原生對話框。", "Do 將來源、路徑和長檔名放在可換行、可選取的詳情內。", "Do 保留圖示生成程式與範本素材來源；實測記憶體後才報告用量。"],
+    "donts": ["Don't 用硬編碼配色取代系統重點色或深淺主題。", "Don't 增加裝飾性卡片、儀表板摘要來取代下載工作佇列。", "Don't 移植 Flutter／網頁控制項或原 Gopeed 按鈕位置作為版面約束。", "Don't 將截圖中曾出現的主題缺陷寫成規範，也不要宣稱尚未實測的 Narrator、高對比或 RAM 節省。"]
+  }
+}
