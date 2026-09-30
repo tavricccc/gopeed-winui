@@ -13,3 +13,11 @@ if (GopeedLink.Parse("gopeed:///extension?params=" + Convert.ToBase64String(Enco
 if (GopeedLink.Parse("gopeed:///create?params=" + encoded.TrimEnd('=').Replace('+', '-').Replace('/', '_')).Parameters?["opts"]?["name"]?.GetValue<string>() != "測試下載.zip") throw new Exception("Base64url mismatch");
 try { GopeedLink.Parse("gopeed:///create?params=invalid!"); throw new Exception("Invalid payload accepted"); } catch (FormatException) { }
 Console.WriteLine("Protocol checks passed: command line, UTF-8 payload, query escaping, headers, empty create, extension, base64url, invalid payload.");
+foreach (var newline in new[] { "\r", "\n", "\r\n" })
+{
+    var headers = HttpHeaders.Parse("Sec-Ch-Ua: \"Chromium\";v=\"140\"" + newline + "Referer: https://www.virtualbox.org/wiki/Downloads" + newline + "Cookie: test=value");
+    if (headers.Count != 3 || headers["Sec-Ch-Ua"]!.GetValue<string>() != "\"Chromium\";v=\"140\"" || headers["Cookie"]!.GetValue<string>() != "test=value") throw new Exception("Header line endings corrupted values");
+    foreach (var value in headers.Select(pair => pair.Value!.GetValue<string>()))
+        if (value.Contains('\r') || value.Contains('\n')) throw new Exception("Newline leaked into HTTP header value");
+}
+Console.WriteLine("Header checks passed: WinUI CR, LF and CRLF; Sec-Ch-Ua quotes, Referer and Cookie preserved.");

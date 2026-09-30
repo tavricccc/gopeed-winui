@@ -11,7 +11,6 @@ public sealed class DownloadWindow : Window
     private readonly CoreClient core = new();
     private readonly JsonObject request;
     private bool closed;
-    private AddDownloadDialog? dialog;
     private DownloadProgressPage? progress;
 
     public DownloadWindow(JsonObject request)
@@ -29,7 +28,7 @@ public sealed class DownloadWindow : Window
             presenter.PreferredMinimumWidth = (int)(540 * scale);
             presenter.PreferredMinimumHeight = (int)(500 * scale);
         }
-        Closed += (_, _) => { closed = true; dialog?.Hide(); progress?.Stop(); core.Dispose(); };
+        Closed += (_, _) => { closed = true; progress?.Stop(); core.Dispose(); };
         surface.Loaded += Confirm;
     }
 
@@ -43,11 +42,16 @@ public sealed class DownloadWindow : Window
             return;
         }
         if (closed) return;
-        dialog = new AddDownloadDialog(core, request, WinRT.Interop.WindowNative.GetWindowHandle(this), compact: true);
-        await NativeDialogs.ShowAsync(dialog, surface.XamlRoot);
-        if (closed) return;
-        if (dialog.CreatedTaskId is not { } id) { Close(); return; }
+        var page = new DownloadConfirmationPage(core, request, WinRT.Interop.WindowNative.GetWindowHandle(this));
+        page.Started += ShowProgress;
+        page.Cancelled += Close;
+        surface.Children.Add(page);
+    }
+
+    private void ShowProgress(string id)
+    {
         Title = "下載進度 · Gopeed Native";
+        surface.Children.Clear();
         progress = new DownloadProgressPage(core, id); surface.Children.Add(progress);
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter) presenter.PreferredMinimumHeight = (int)(400 * GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(AppWindow.Size.Width, (int)(480 * GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0)));

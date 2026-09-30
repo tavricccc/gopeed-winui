@@ -1,4 +1,4 @@
-#define AppVersion "0.1.2"
+#define AppVersion "0.1.3"
 [Setup]
 AppId={{B652BEF3-0741-4B5E-9066-C6F3EBF18622}
 AppName=Gopeed Native

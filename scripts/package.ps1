@@ -4,4 +4,4 @@ $repo = Split-Path $PSScriptRoot -Parent
 $compiler = Join-Path $env:LOCALAPPDATA 'Programs/Inno Setup 6/ISCC.exe'
 & $compiler (Join-Path $PSScriptRoot 'installer.iss')
 if ($LASTEXITCODE) { throw 'Installer compilation failed' }
-Compress-Archive -Path (Join-Path $repo 'artifacts/portable/*') -DestinationPath (Join-Path $repo 'artifacts/GopeedNative-Portable-0.1.2-x64.zip') -Force
+Compress-Archive -Path (Join-Path $repo 'artifacts/portable/*') -DestinationPath (Join-Path $repo 'artifacts/GopeedNative-Portable-0.1.3-x64.zip') -Force

@@ -12,7 +12,7 @@
   <Identity
     Name="Tavric.GopeedNative"
     Publisher="CN=Tavric"
-    Version="0.1.2.0" />
+    Version="0.1.3.0" />
 
   <mp:PhoneIdentity PhoneProductId="E612D966-BF91-4AFB-8B94-E99E96457208" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
