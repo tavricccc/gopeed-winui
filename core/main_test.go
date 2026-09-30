@@ -43,6 +43,7 @@ func TestDownloadPauseRestartResume(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer rest.Stop()
+	lifecycle := trackLifecycle(rest.Downloader)
 	endpoint := fmt.Sprintf("http://127.0.0.1:%d/api/v1/", port)
 	call := func(method, route string, body any) json.RawMessage {
 		t.Helper()
@@ -101,6 +102,9 @@ func TestDownloadPauseRestartResume(t *testing.T) {
 	call("PUT", "tasks/"+id+"/pause", nil)
 	if task().Status != base.DownloadStatusPause {
 		t.Fatal("pause did not persist")
+	}
+	if err := lifecycle.pauseAndWait(); err != nil {
+		t.Fatal(err)
 	}
 	rest.Stop()
 	port, err = rest.Start(config)

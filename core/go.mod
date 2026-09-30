@@ -2,7 +2,10 @@ module gopeed-native/core
 
 go 1.24.9
 
-require github.com/GopeedLab/gopeed v0.0.0
+require (
+	github.com/GopeedLab/gopeed v0.0.0
+	github.com/getlantern/systray v1.2.2
+)
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
@@ -56,7 +59,6 @@ require (
 	github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7 // indirect
 	github.com/getlantern/hidden v0.0.0-20190325191715-f02dbb02be55 // indirect
 	github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f // indirect
-	github.com/getlantern/systray v1.2.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
 	github.com/go-git/go-git/v5 v5.8.1 // indirect

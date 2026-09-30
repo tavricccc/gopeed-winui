@@ -28,9 +28,39 @@ func main() {
 	root := flag.String("data", "", "Application data directory")
 	ui := flag.String("ui", "", "Native frontend executable")
 	icon := flag.String("icon", "", "Tray icon path")
+	shutdown := flag.Bool("shutdown", false, "Gracefully stop the running core")
 	flag.Parse()
 	if *root == "" {
 		panic("--data is required")
+	}
+	if *shutdown {
+		payload, err := os.ReadFile(filepath.Join(*root, "session.json"))
+		if os.IsNotExist(err) {
+			return
+		}
+		if err != nil {
+			panic(err)
+		}
+		var current session
+		if err := json.Unmarshal(payload, &current); err != nil {
+			panic(err)
+		}
+		request, _ := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d/shutdown", current.ControlPort), nil)
+		request.Header.Set("X-Api-Token", current.Token)
+		client := http.Client{Timeout: 20 * time.Second}
+		response, err := client.Do(request)
+		if err != nil {
+			return
+		}
+		response.Body.Close()
+		deadline := time.Now().Add(20 * time.Second)
+		for time.Now().Before(deadline) {
+			if _, err := os.Stat(filepath.Join(*root, "session.json")); os.IsNotExist(err) {
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		return
 	}
 	if err := os.MkdirAll(*root, 0700); err != nil {
 		panic(err)
@@ -58,7 +88,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer rest.Stop()
+	lifecycle := trackLifecycle(rest.Downloader)
+	config, err := rest.Downloader.GetConfig()
+	if err != nil {
+		panic(err)
+	}
+	if config.DownloadDir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			panic(err)
+		}
+		config.DownloadDir = filepath.Join(home, "Downloads")
+		if err := rest.Downloader.PutConfig(config); err != nil {
+			panic(err)
+		}
+	}
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 	// A separate authenticated lifecycle endpoint avoids modifications to upstream.
@@ -90,11 +134,14 @@ func main() {
 	if err := os.Rename(sessionPath+".tmp", sessionPath); err != nil {
 		panic(err)
 	}
-	defer os.Remove(sessionPath)
+	defer func() { rest.Stop(); os.Remove(sessionPath) }()
 	fmt.Println("Gopeed Native core ready")
 	if *ui == "" {
 		<-stop
 	} else {
 		runTray(*ui, *icon, stop)
+	}
+	if err := lifecycle.pauseAndWait(); err != nil {
+		rest.Downloader.Logger.Error().Err(err).Msg("save before shutdown failed")
 	}
 }
