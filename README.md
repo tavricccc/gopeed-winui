@@ -14,6 +14,8 @@ Gopeed 下載引擎的 Windows 原生前端。介面使用 WinUI 3、繁體中�
 
 瀏覽器接管使用 Gopeed 官方擴充套件。設定頁提供套件入口、`http://127.0.0.1:18762` 與可複製的持久 API Token，將它們填入擴充套件連線設定。實際瀏覽器接管、BT/eD2k 網路傳輸與第三方擴充套件尚未完成端到端驗證。
 
+安裝版 0.1.1 會註冊目前使用者的 `gopeed://` 協定。網站或擴充套件使用官方 `gopeed:///create?params=…` 連結時，將網址、檔名、目的地與 HTTP 標頭帶入原生新增下載視窗，確認後才開始下載。`gopeed:///extension?params=…` 可帶入擴充功能 repository，仍需手動確認安裝。已開啟的前端會接手連結，不另開第二個視窗。Portable 不主動修改 Windows 協定註冊。
+
 ## 開發
 
 安裝 Go 1.24.9 以上、.NET 10 SDK 與 PowerShell 7；製作安裝包另外需要 Inno Setup 6，預設尋找目前使用者的安裝位置。首次取得專案需執行 `git submodule update --init --recursive`。建置前先關閉本專案前端與核心，避免正在執行的檔案被鎖定。
