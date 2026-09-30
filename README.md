@@ -1,52 +1,92 @@
 # Gopeed Native
 
-Gopeed 下載引擎的 Windows 原生前端。介面使用 WinUI 3、繁體中文與系統主題，沒有 Flutter 或 WebView。這是獨立專案，並非 Gopeed 官方版本。
+[Gopeed](https://github.com/GopeedLab/gopeed) 的 Windows 原生前端，使用 **WinUI 3 + Go 下載引擎**，提供繁體中文介面、系統主題與獨立下載視窗。這是社群 fork，並非 Gopeed 官方發行版。
 
-## 使用
+本專案維護在 **`winui-native` 分支**；`main` 保留上游內容。前端不用 Flutter 或 WebView，下載引擎固定在 Gopeed v1.9.3。
 
-執行安裝程式即可安裝至目前使用者，不需要管理員權限；也可解壓縮 portable ZIP 執行 `Gopeed.Native.exe`。目前提供 Windows x64 版本。
+![Gopeed Native 原生介面](docs/images/native-main.png)
 
-新增單一連結時先檢查來源，再選擇目的地與檔案；貼上多行連結可批次開始下載。支援暫停／繼續、搜尋與狀態篩選、原生檔案與資料夾選擇器、Torrent 檔案選擇、連線數／HTTP headers、擴充功能與代理設定。窄視窗可從命令列開啟詳細資訊。
+## 安裝
 
-關閉視窗後，獨立 Go 核心會留在系統匣繼續下載。系統匣可重新開啟介面或停止核心；設定頁也提供結束操作。Ctrl+N 新增、Ctrl+F 搜尋、F5 更新清單。
+從 [v0.2.0 Release](https://github.com/tavricccc/gopeed-winui/releases/tag/v0.2.0) 下載：
 
-下載資料與 API Token 位於 `%LOCALAPPDATA%\GopeedNative`，與官方 Gopeed 的資料分開。解除安裝會停止本專案核心並保留資料與下載檔案。若需要完全清除，可在結束核心後手動刪除這個資料夾。
+- **GopeedNative-Setup-0.2.0-x64.exe**：安裝至目前使用者，建立開始功能表入口並註冊 `gopeed://` 協定，不需要管理員權限。
+- **GopeedNative-Portable-0.2.0-x64.zip**：完整解壓縮後執行 `Gopeed.Native.exe`；不註冊協定。
+- **GopeedNative-Source-0.2.0.zip**：完整原始碼，包含固定版本的上游核心。
 
-瀏覽器接管使用 Gopeed 官方擴充套件。設定頁提供套件入口、`http://127.0.0.1:18762` 與可複製的持久 API Token，將它們填入擴充套件連線設定。實際瀏覽器接管、BT/eD2k 網路傳輸與第三方擴充套件尚未完成端到端驗證。
+目前實測環境是 Windows 11 x64。前端採自包含部署，不需要另外安裝 .NET 或 Windows App SDK runtime。Windows 10 未完成實機驗證。
 
-安裝版 0.1.1 會註冊目前使用者的 `gopeed://` 協定。網站或擴充套件使用官方 `gopeed:///create?params=…` 連結時，將網址、檔名、目的地與 HTTP 標頭帶入原生新增下載視窗，確認後才開始下載。`gopeed:///extension?params=…` 可帶入擴充功能 repository，仍需手動確認安裝。已開啟的前端會接手連結，不另開第二個視窗。Portable 不主動修改 Windows 協定註冊。
+## 操作
+
+主要操作跟著下載狀態變化，永遠放在第一位，並使用系統重點色：
+
+| 狀態 | 主要操作 |
+| --- | --- |
+| 下載中／等待中 | 暫停下載 |
+| 已暫停 | 繼續下載 |
+| 下載失敗 | 重試下載 |
+| 已完成 | 開啟檔案 |
+
+完成視窗也提供「在資料夾中顯示」與「開啟檔案後關閉此視窗」。主清單雙擊已完成的項目可開啟檔案，其他狀態則顯示詳情。刪除任務時，可另外勾選刪除檔案，預設保留。
+
+新增單一連結時，先檢查來源、大小與可選檔案，再確認儲存位置與檔名；多行連結可批次開始。支援原生檔案／資料夾選擇器、Torrent 檔案選擇、HTTP headers、連線數、代理設定與上游擴充功能管理。HTTP 標頭可保留 Cookie、Referer 與 Sec-Ch-Ua 品牌引號。
+
+常用功能包括搜尋、狀態篩選、全部暫停／繼續、複製連結與從剪貼簿新增。可以拖入下載網址或 `.torrent` 檔案；完成視窗的檔名可拖出檔案。設定頁可開關「記住上次下載資料夾」。
+
+| 快捷鍵 | 功能 |
+| --- | --- |
+| Ctrl+N | 新增下載 |
+| Ctrl+F | 搜尋 |
+| F5 | 更新清單 |
+
+關閉視窗後，核心會留在系統匣繼續下載。從系統匣可重新開啟介面或停止核心；設定頁也提供結束操作。窄視窗會收合側邊詳情，保留「詳細資訊」按鈕。
+
+## 官方瀏覽器擴充套件
+
+使用 [Gopeed 官方擴充套件](https://github.com/GopeedLab/browser-extension) 的**遠端下載模式**，先開啟 Gopeed Native，從設定頁複製 API Token，新增伺服器：
+
+1. 通訊協定選 **HTTP**。
+2. 位址欄填 **`127.0.0.1:18762`**，不含 `http://`。
+3. 貼上本程式設定頁的 API Token，測試並儲存，啟用遠端下載。
+
+擴充套件送來的下載會先開獨立確認窗，按下「開始下載」後才建立任務；取消不會下載。開始後同一視窗顯示進度，完成時第一個按鈕變成「開啟檔案」。主清單沒有開啟時，也只顯示這個下載窗。
+
+安裝版也接受官方 `gopeed:///create?params=…` 與 `gopeed:///extension?params=…` 連結；擴充功能仍需手動確認安裝。本專案的瀏覽器接管採上述本機 HTTP 入口；未實作瀏覽器預設的 Native Messaging host。
+
+## 資料與解除安裝
+
+資料、偏好與持久 API Token 位於 `%LOCALAPPDATA%\GopeedNative`，與官方 Gopeed 的資料分開。核心只監聽本機介面，API 保持 Token 驗證。請勿公開 session、Token、Cookie 或暫存請求內容。
+
+解除安裝會停止本專案核心，保留任務資料與下載檔案。若要完全清除，可在結束核心後手動刪除資料夾。安裝版會接管目前使用者的 `gopeed://` 協定，請避免同時讓其他 Gopeed 版本反覆註冊同一協定。
 
 ## 開發
 
-### 0.1.2 瀏覽器下載視窗
-
-保持官方擴充套件的遠端下載設定：通訊協定 HTTP、位址欄填 `127.0.0.1:18762`（不含 `http://`），Token 不變。瀏覽器建立下載的 API 請求會先開獨立原生確認視窗；確認後才建立任務，同一視窗接著顯示進度與暫停／續傳。取消不建立下載，關閉進度視窗仍會背景下載。
-
-這個本機入口現在以使用者確認為預設行為。原生前端在確認操作後附加內部標記，才將建立請求交給 Gopeed。Token 驗證保持啟用。暫存請求位於目前使用者的 `GopeedNative/pending-downloads`，前端取用後移除；不把 Cookie 或長 HTTP headers 塞進協定 URL／命令列。
-
-### 建置
-
-0.1.3 將獨立確認頁直接放入視窗，移除內嵌對話框造成的白色外框；主清單與獨立視窗共用 DownloadForm。HTTP 標頭解析同時處理 WinUI 的 CR 換行、LF 與 CRLF，避免多行被黏入 Sec-Ch-Ua；保留各標頭值，包含 Cookie、Referer 與品牌引號。
-
-安裝 Go 1.24.9 以上、.NET 10 SDK 與 PowerShell 7；製作安裝包另外需要 Inno Setup 6，預設尋找目前使用者的安裝位置。首次取得專案需執行 `git submodule update --init --recursive`。建置前先關閉本專案前端與核心，避免正在執行的檔案被鎖定。
+準備 **Windows、PowerShell 7、Go 1.27、.NET 10 SDK**；製作安裝程式另需 Inno Setup 6，腳本預設尋找其目前使用者安裝位置。
 
 ```powershell
+git clone --branch winui-native --recurse-submodules https://github.com/tavricccc/gopeed-winui.git
+cd gopeed-winui
 pwsh -File scripts/build.ps1 -Test
 pwsh -File scripts/package.ps1
 ```
 
-建置產物位於 `artifacts/`。前端採自包含部署，不要求使用者另外安裝 .NET 或 Windows App SDK runtime。
+已取得的 checkout 可執行 `git submodule update --init --recursive`。建置產物位於 `artifacts/`。重新建置之前先關閉從該產物執行的前端與核心，避免檔案鎖定。
 
-- `upstream/`：固定 Gopeed v1.9.3，commit `a5cd53f94c18ac65add684b1113fa5f0b47cc4da`，不改上游原始碼。
-- `core/`：REST API、系統匣、持久 Token 與關閉時等待下載狀態寫入；只有 Go 引擎。
-- `src/Gopeed.Native/`：WinUI 頁面、ViewModel、資料模型與 API client。
+- `upstream/`：Gopeed v1.9.3，固定 commit `a5cd53f94c18ac65add684b1113fa5f0b47cc4da`。
+- `core/`：Go API、瀏覽器確認入口、系統匣、持久 Token 與關閉時的狀態保存。
+- `src/Gopeed.Native/`：原生頁面、ViewModel、模型與服務；確認窗與主介面共用 DownloadForm。
+- `tests/Gopeed.ProtocolChecks/`：協定、標頭換行與狀態動作的必要檢查。
 - `scripts/`：建置、圖示生成與每使用者安裝包。
-- `DESIGN.md`：原生介面與素材來源規範。
+- `DESIGN.md`：原生介面及素材來源；[CONTRIBUTING.md](CONTRIBUTING.md) 說明參與方式。
 
-授權為 GPL-3.0，見 `LICENSE`。散布修改版應一併提供對應原始碼，包括固定版本的上游核心。
+Windows GitHub Actions 會建置自包含前端與核心、執行必要檢查，並保存 portable 產物。詳見 [Actions](https://github.com/tavricccc/gopeed-winui/actions)。
 
-## 驗證
+## 驗證範圍
 
-核心整合測試涵蓋 Token 驗證、建立下載、暫停、核心重新啟動、續傳、SHA-256 與移除任務。原生介面已實際操作 HTTP 下載、深淺主題、窄視窗、設定、對話框與依狀態啟用的命令。64 MiB 本機 HTTP 下載在關閉前端後持續增加進度並完成，檔案 SHA-256 與來源一致。
+已驗證 Token 驗證、HTTP 建立／暫停／重啟續傳／SHA-256／移除任務，並實際測試 WinUI 下載確認、狀態動作與關閉前端後背景下載。VirtualBox 的 HTTP 下載已通過官方 SHA-256 比對；CR、LF、CRLF 標頭解析檢查通過。
 
-記憶體請以交付的 `verification.txt` 為準：私有工作集、含共用 DLL 的總工作集、私有提交量是不同指標。數值是這台電腦的實測快照，並非跨硬體保證或與官方版本相同工作量的對照測試。
+BT/eD2k 網路傳輸、第三方擴充功能、Narrator、高對比與跨應用程式拖放尚未完成端到端驗證。尚未提供排程或下載佇列管理。原生前端的實測 RAM 快照不能視為跨硬體保證，也沒有與官方版本同工作量的對照結論。
+
+## 授權
+
+GPL-3.0，見 [LICENSE](LICENSE)。下載引擎來自 GopeedLab/gopeed，保留上游授權與來源。Release 提供包含 submodule 內容的完整原始碼；GitHub 自動產生的 Source code ZIP 不包含 submodule，請使用附加的完整來源 ZIP 或遞迴 clone。

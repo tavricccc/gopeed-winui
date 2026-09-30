@@ -1,0 +1,34 @@
+name: Windows native build
+on:
+  push:
+    branches: [winui-native]
+  pull_request:
+    branches: [winui-native]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: '1.27.0'
+          cache-dependency-path: core/go.sum
+      - uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and verify
+        shell: pwsh
+        run: ./scripts/build.ps1 -Test
+      - name: Create portable archive
+        shell: pwsh
+        run: Compress-Archive artifacts/portable/* artifacts/GopeedNative-Portable-0.2.0-x64.zip
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: GopeedNative-windows-x64
+          path: artifacts/GopeedNative-Portable-0.2.0-x64.zip
+          compression-level: 0

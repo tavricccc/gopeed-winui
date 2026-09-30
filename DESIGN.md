@@ -67,7 +67,7 @@ components:
 - 單一系統重點色，淺色與深色同步。
 - 窄視窗保留操作，以對話框顯示完整詳情。
 
-記錄依據：`src/Gopeed.Native` 實作、WinUI NuGet 套件 `Microsoft.WindowsAppSDK.WinUI` 2.3.9 的 `lib/native/Microsoft.UI/Themes/generic.xaml`，以及 `.impeccable/review/` 的 desktop、dark、compact、settings、extensions、add-dialog、delete-dialog 圖片。圖片用於確認構圖與可讀性；此文件不是 Narrator、高對比或記憶體效能的測試報告。
+記錄依據：0.2.0 的 `src/Gopeed.Native` 實作與 WinUI NuGet 套件 `Microsoft.WindowsAppSDK.WinUI` 2.3.9 的 `lib/native/Microsoft.UI/Themes/generic.xaml`。`work/v02-main-visible.png` 是目前有效的主清單視覺證據，可確認檔案類型圖示、未選取時的停用主動作與原生版面；既有 `.impeccable/review/` 圖片只記錄前一版設計。其餘 0.2.0 完成／暫停／確認舊圖是空白，不採為證據。以下行為依實作來源記錄，不等於互動、Narrator、高對比或記憶體效能已驗證。
 
 ## Colors
 
@@ -84,6 +84,7 @@ components:
 - **次要文字**：`TextFillColorSecondaryBrush` 用於說明、傳輸量、速度、詳情欄位名稱與底部摘要。
 - **命令列層**：`LayerFillColorDefaultBrush` 提供輕微層次。
 - **透明清單內容**：`ControlFillColorTransparentBrush` 保留 `ListViewItem` 原生 hover、選取與焦點呈現。
+- **完成提示**：獨立進度窗的完成勾號使用 `SystemFillColorSuccessBrush`；狀態仍以「下載完成」文字明示。
 - **視窗標題列**：caption 按鈕前景隨實際主題切換白／黑，高對比時程式採系統前景色；背景透明，hover 背景由目前主題選擇深灰／淺灰。
 
 **The Theme Resource Rule.** 新增介面應沿用平台資源，不從截圖取色後覆蓋 WinUI 的完整狀態範本。所有 `ContentDialog` 經 `NativeDialogs.ShowAsync` 將 `RequestedTheme` 同步為視窗實際主題。
@@ -100,7 +101,7 @@ components:
 | body-strong | `BodyStrongTextBlockStyle` | 清單檔名、選取下載名稱 |
 | caption | `CaptionTextBlockStyle` | 傳輸量、速度、底部摘要 |
 
-清單檔名以 `CharacterEllipsis` 截斷；詳情中的檔名、來源、路徑可換行，路徑及來源可選取複製。沒有自訂行高或字距。新增下載的加號為 16 DIP `FontIcon`，空佇列下載圖示為 40 DIP；其餘 `SymbolIcon`／`FontIcon` 使用 WinUI 圖示系統。
+清單檔名以 `CharacterEllipsis` 截斷；詳情中的檔名、來源、路徑可換行，路徑及來源可選取複製。沒有自訂行高或字距。按鈕內容以 16 DIP `FontIcon` 與文字並排、間距 8 DIP；`NativeButtons` 同步設定 AutomationProperties.Name。清單檔案類型圖示為 24 DIP，進度窗狀態圖示 28 DIP，空佇列下載圖示 40 DIP；圖示皆來自 WinUI 字型系統。`DownloadPresentation.FileGlyph` 依副檔名分壓縮檔、安裝檔、音訊、影片、圖片及一般文件，不載入每個檔案的 Shell 縮圖。
 
 ## Layout
 
@@ -111,10 +112,10 @@ components:
 - 下載頁區段間距 14 DIP。標題和新增按鈕左右排列；篩選與搜尋在下一列，搜尋固定 240 DIP，篩選最小寬 160 DIP。
 - 清單與詳情相隔 24 DIP。頁寬達 1000 DIP 時顯示 280 DIP 右側詳情欄；低於門檻收合側欄，由「詳細資訊」命令開啟可捲動 `ContentDialog`，並非另建下方詳情卡片。
 - 下載清單為原生 `ListView`，單選、容器 padding 12 DIP；每列檔名與狀態、進度、傳輸量與速度共三列，列距 6 DIP、欄距 16 DIP，右側狀態／速度欄寬 115 DIP。
-- 清單佔剩餘空間，底部並排摘要與背景下載說明。原生 CommandBar overflow 承載次要操作。
+- 清單佔剩餘空間，底部並排摘要與背景下載說明。第一個 accent 選取動作最小寬 140 DIP，與右側 CommandBar 相距 12 DIP；CommandBar 啟用 dynamic overflow 承載次要操作。
 - 設定欄位區最大寬 760 DIP、間距 18 DIP，內容捲動；「儲存設定」位於獨立底列，保持可達。
 - 擴充功能欄位區最大寬 800 DIP、間距 20 DIP，已安裝項目相距 16 DIP，各項內部 10 DIP，命令按鈕間距 8 DIP。
-- 新增下載內容最小寬 420 DIP、間距 14 DIP，捲動區最大高 500 DIP；檔案選取清單最大高 180 DIP。
+- 共用 DownloadForm 內容最小寬 420 DIP、間距 14 DIP；檔案選取清單最大高 180 DIP。獨立確認窗預設 640 × 540 DIP，最小 540 × 500 DIP，建立時置中並限制於工作區；轉進度頁後保留目前寬度，高度改為 480 DIP、最小高度 400 DIP。確認及進度頁外距 24 DIP、區段距 20 DIP，上方內容可捲動，底列按鈕固定可達。
 
 ## Elevation & Depth
 
@@ -126,12 +127,18 @@ WinUI 基本控制項使用 `ControlCornerRadius`，浮出層使用 `OverlayCorn
 
 ## Components
 
-瀏覽器下載使用獨立原生視窗。確認視窗預設 640×540 DIP，來源使用單行欄位、檔名與位置可編輯，先解析大小，再由使用者按「開始下載」。0.1.3 的確認頁直接填滿視窗，統一使用 ApplicationPageBackgroundThemeBrush，外距 24 DIP、區段距 20 DIP、底部按鈕靠右；不再嵌套 ContentDialog 外框、遮罩或額外白色留邊。DownloadForm UserControl 與主清單新增對話框共用邏輯；主清單仍保留多行與 torrent 選擇。
+瀏覽器下載使用獨立原生視窗。來源使用單行欄位、檔名與位置可編輯，先解析大小，再由使用者按「開始下載」。確認頁直接填滿視窗，使用 ApplicationPageBackgroundThemeBrush，底部按鈕靠右。DownloadForm UserControl 與主清單新增對話框共用邏輯；主清單保留多行與 torrent 選擇。
 
-開始後同一視窗縮為 640×480 DIP，顯示進度、傳輸量、速度、剩餘時間、來源與位置；底列暫停、繼續、開啟與資料夾命令固定可達，上方資訊可捲動。完成前不啟用開啟檔案。關閉視窗會停止該視窗輪詢，下載由背景核心繼續。
+開始後同一視窗改為進度頁，第一個 accent 按鈕依 `DownloadPresentation.ForStatus` 變化：running／wait／ready 為「暫停下載」、pause 為「繼續下載」、error 為「重試下載」、done 為「開啟檔案」。底列其次為儲存資料夾／在資料夾中顯示及關閉。完成時標題改為「下載完成」、顯示成功勾號、大小與位置，隱藏進度條、停止輪詢；來源位於 Expander，失敗時自動展開。完成檔名可拖出檔案／資料夾，以 Copy 作業交給其他應用程式。關閉視窗會停止該視窗輪詢，下載由背景核心繼續。
+
+「開啟檔案後關閉此視窗」只在完成時顯示，預設勾選；在使用者實際按開啟且成功後關閉，不在下載完成時自動關閉。設定頁另有「記住上次使用的下載位置」與「開啟檔案後關閉下載進度視窗」CheckBox。`UiPreferences` 以 `preferences.json` 保存兩個偏好（預設開啟）。記住位置時，成功建立下載後儲存最後資料夾；下次表單優先載入最後資料夾，外部請求明確指定位置時再覆蓋。
+
+主清單可從剪貼簿文字、拖入 WebLink／文字連結或 torrent 檔案開啟新增表單；文字接受 HTTP、HTTPS、magnet、file 絕對 URI。儲存項目拖入目前只接受 torrent。清單命令與進度窗詳情可複製下載連結。這些入口都先讓使用者確認，不把一般檔案拖入誤當下載來源。
+
+外部 `create` protocol 或 `--download-request` activation 直接開獨立確認窗，不強制建立或喚起主清單；一般啟動與 extension 路由仍開主視窗。activation 處理錯誤會在主視窗顯示錯誤。`WindowAppearance` 統一提供已保存主題及部署目錄的 `Assets/AppIcon.ico`，主窗與下載窗共用。
 
 - **主要按鈕**：原生 Button + `AccentButtonStyle`，用於新增下載、安裝擴充功能、儲存設定。hover、pressed、focus、disabled 全由原生範本。新增下載在核心未連線時停用。
-- **命令列與內容功能表**：原生 CommandBar、AppBarButton、MenuFlyout；暫停只對可暫停狀態啟用，繼續／重試只對暫停與錯誤狀態啟用，開啟檔案只對完成項目啟用。沒有選取時，選取項目的命令停用。
+- **命令列與內容功能表**：原生 CommandBar、AppBarButton、MenuFlyout；主清單第一個 accent 動作與進度窗共用同一狀態映射，完成時優先「開啟檔案」。右鍵功能表第一項同樣是當前主動作；另保留暫停、繼續／重試與資料夾命令。沒有選取時，選取項目的命令停用。
 - **下載列**：原生 ListViewItem、文字狀態與 ProgressBar。狀態包含下載中、已完成、做種中、已暫停、下載失敗、等待中、準備中。未知大小且正在下載時進度為 indeterminate；不單靠顏色區分狀態。完成列雙擊開啟檔案，其餘雙擊顯示詳情。
 - **欄位**：原生 TextBox、AutoSuggestBox、ComboBox、NumberBox、PasswordBox、ToggleSwitch、CheckBox 與 Expander。欄位有 Header 或文字標籤；搜尋提示為「檔名或網址」。Token 使用 PasswordBox，可暫時顯示及複製。
 - **新增下載**：原生 ContentDialog；單一連結先「檢查連結」，顯示解析預覽與可選檔案，再「開始下載」。多行連結主按鈕改為「開始 N 個下載」。忙碌時停用主按鈕並顯示 24 DIP ProgressRing；錯誤在內部 InfoBar 呈現，保留輸入。

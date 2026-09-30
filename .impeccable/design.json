@@ -1,9 +1,10 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-30T15:36:15Z",
+  "generatedAt": "2026-09-30T19:28:01Z",
   "title": "Design System: Gopeed Native",
   "extensions": {
     "platform": "Windows desktop / WinUI 3",
+    "documentedVersion": "0.2.0",
     "units": "DIP；視窗建立時依 DPI 轉換為像素。",
     "sourceOfTruth": [
       "src/Gopeed.Native/App.xaml",
@@ -21,6 +22,12 @@
       "src/Gopeed.Native/Views/DownloadWindow.cs",
       "src/Gopeed.Native/Views/DownloadProgressPage.cs",
       "src/Gopeed.Native/Services/NativeDialogs.cs",
+      "src/Gopeed.Native/Services/DownloadPresentation.cs",
+      "src/Gopeed.Native/Services/UiPreferences.cs",
+      "src/Gopeed.Native/Services/WindowAppearance.cs",
+      "src/Gopeed.Native/Services/FileActions.cs",
+      "src/Gopeed.Native/Views/NativeButtons.cs",
+      "src/Gopeed.Native/App.xaml.cs",
       "Microsoft.WindowsAppSDK.WinUI 2.3.9 / lib/native/Microsoft.UI/Themes/generic.xaml"
     ],
     "colorMeta": {
@@ -33,7 +40,8 @@
       { "resource": "LayerFillColorDefaultBrush", "purpose": "CommandBar 背景層。" },
       { "resource": "ControlFillColorTransparentBrush", "purpose": "清單內容透明，保留 ListViewItem 原生選取與焦點呈現。" },
       { "resource": "ContentControlThemeFontFamily / XamlAutoFontFamily", "purpose": "由 Windows 依系統與文字語系選擇字型。" },
-      { "resource": "ControlCornerRadius / OverlayCornerRadius", "purpose": "基本控制項與浮出層形狀；基準值在 DESIGN.md frontmatter。" }
+      { "resource": "ControlCornerRadius / OverlayCornerRadius", "purpose": "基本控制項與浮出層形狀；基準值在 DESIGN.md frontmatter。" },
+      { "resource": "SystemFillColorSuccessBrush", "purpose": "完成進度窗的成功勾號；以下載完成文字共同辨識。" }
     ],
     "typographyMeta": {
       "title": { "displayName": "頁標題", "purpose": "TitleTextBlockStyle：下載、設定、擴充功能。" },
@@ -58,7 +66,9 @@
       { "name": "新增下載", "kind": "custom", "source": "Views/AddDownloadDialog.xaml", "control": "ContentDialog", "description": "單一連結檢查再開始；批次顯示數量；InfoBar 回報錯誤，忙碌時 ProgressRing 及停用主按鈕。" },
       { "name": "移除下載", "kind": "custom", "source": "MainPage.xaml.cs", "control": "ContentDialog + CheckBox", "description": "預設取消；刪除實體檔案預設未勾選；使用 NativeDialogs 同步實際主題。" },
       { "name": "瀏覽器下載確認視窗", "kind": "custom", "source": "Views/DownloadWindow.cs / Views/DownloadConfirmationPage.xaml / Views/DownloadForm.xaml", "control": "Window + Page + UserControl", "description": "640×540 DIP 獨立視窗；頁面直接填滿，統一背景、24 DIP 外距、20 DIP 區段距、底部按鈕靠右。單行來源、可編輯檔名／位置、解析大小；確認前不建立任務，取消關閉視窗。" },
-      { "name": "下載進度視窗", "kind": "custom", "source": "Views/DownloadProgressPage.cs", "control": "Window + ProgressBar + TextBlock + Button", "description": "640×480 DIP，原生進度與傳輸資訊，底列命令固定可達；各視窗獨立 API client 和輪詢生命週期，關閉仍背景下載。" }
+      { "name": "下載進度視窗", "kind": "custom", "source": "Views/DownloadProgressPage.cs", "control": "Window + ProgressBar + TextBlock + Button + CheckBox + Expander", "description": "保留確認窗寬度，高度改為 480 DIP，最小 540×400 DIP。第一個 accent 動作：進行中暫停、暫停繼續、失敗重試、完成開啟。完成顯示勾號、大小、位置，隱藏進度條並停止輪詢；完成檔名可 Copy 拖出，來源可複製。開啟成功後依偏好關閉；關閉仍背景下載。" },
+      { "name": "狀態主動作", "kind": "button", "source": "Services/DownloadPresentation.cs / Views/NativeButtons.cs / MainPage.xaml", "control": "Button + FontIcon + TextBlock", "description": "主清單與進度窗共用狀態映射；完成時第一個 accent 按鈕是開啟檔案。FontIcon 16 DIP、間距 8 DIP，NativeButtons 同步 AutomationProperties.Name。" },
+      { "name": "檔案類型圖示", "kind": "custom", "source": "Services/DownloadPresentation.cs / MainPage.xaml", "control": "FontIcon", "description": "清單 24 DIP，以副檔名分壓縮檔、安裝檔、音訊、影片、圖片與一般文件；平台字型圖示，非 Shell 縮圖。" }
     ],
     "previewPolicy": "原生 WinUI 3 為設計權威。components 保留為空，不建立 HTML/CSS 仿製控制項；nativeComponents 記錄實際原生元件。沒有為固定圖示色生成未實作的 tonal ramp。",
     "assetProvenance": [
@@ -66,8 +76,11 @@
       { "source": "Microsoft.WindowsAppSDK.WinUI.CSharp.Templates", "scaffold": "winapp 0.7.0 new --name Gopeed.Native --template winui-mvvm --template-version latest --use-defaults", "assets": ["SplashScreen.scale-200.png", "Wide310x150Logo.scale-200.png"], "usage": "官方範本素材；保留為 Content，目前 unpackaged 介面未使用。" },
       { "source": "Microsoft.WindowsAppSDK.WinUI runtime", "assets": ["Microsoft.UI.Xaml/Assets/NoiseAsset_256x256_PNG.png"], "usage": "Mica 平台材質，隨 runtime 打包。" }
     ],
-    "reviewEvidence": [".impeccable/review/desktop.png", ".impeccable/review/dark.png", ".impeccable/review/compact.png", ".impeccable/review/settings.png", ".impeccable/review/extensions.png", ".impeccable/review/add-dialog.png", ".impeccable/review/delete-dialog.png"],
-    "verificationLimits": ["來源與截圖確認，非完整互動測試報告。", "未宣稱 Narrator 或高對比已實測。", "未宣稱 RAM 節省；沒有性能推估。", "SDK 基準與來源資源優先於截圖取色。"]
+    "reviewEvidence": ["work/v02-main-visible.png"],
+    "previousVersionEvidence": [".impeccable/review/desktop.png", ".impeccable/review/dark.png", ".impeccable/review/compact.png", ".impeccable/review/settings.png", ".impeccable/review/extensions.png", ".impeccable/review/add-dialog.png", ".impeccable/review/delete-dialog.png"],
+    "preferences": { "source": "Services/UiPreferences.cs", "storage": "preferences.json", "rememberDirectory": "預設開啟；成功建立後保存最後位置，表單載入優先於核心預設，外部明確指定位置再覆蓋。", "closeAfterOpen": "預設開啟，完成才顯示；按開啟成功後關閉，不是完成即自動關閉。" },
+    "inputFlows": { "clipboard": "主清單文字連結開啟新增表單；HTTP、HTTPS、magnet、file 絕對 URI。", "drop": "WebLink／文字連結或 torrent StorageItems 開啟新增表單；一般檔案不接受。", "activation": "create protocol／pending download request 直接開獨立確認窗；一般啟動及 extension 路由仍開主窗，錯誤也在主窗回報。", "icons": "WindowAppearance.SetIcon 在主窗與下載窗載入部署目錄 Assets/AppIcon.ico。" },
+    "verificationLimits": ["0.2.0 行為依實作來源記錄；有效主清單截圖只確認圖示、未選取按鈕及版面。", "舊 v02 完成／暫停／確認空白截圖不採為證據；新完成與暫停視覺及互動驗證待 finish review。", "未宣稱 Narrator 或高對比已實測。", "未宣稱 RAM 節省；沒有性能推估。", "SDK 基準與來源資源優先於截圖取色。"]
   },
   "components": [],
   "narrative": {
