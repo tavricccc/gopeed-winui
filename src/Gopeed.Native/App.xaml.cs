@@ -42,6 +42,7 @@ public partial class App : Application
     /// </summary>
     public App()
     {
+        Services.WindowAppearance.InitializeProcess();
         InitializeComponent();
         UnhandledException += (_, e) =>
         {
@@ -56,36 +57,53 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        if (Window is not null) { Window.Activate(); return; }
         var instance = AppInstance.FindOrRegisterForKey("GopeedNative.Main");
         if (!instance.IsCurrent)
         {
             await instance.RedirectActivationToAsync(AppInstance.GetCurrent().GetActivatedEventArgs());
             Exit(); return;
         }
-        Window = new MainWindow();
-        Window.Closed += (_, _) => Window = null!;
         DispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         instance.Activated += (_, activation) => DispatcherQueue.TryEnqueue(() => HandleActivation(activation));
-        Window.Activate();
         HandleActivation(AppInstance.GetCurrent().GetActivatedEventArgs());
     }
 
-    private void HandleActivation(AppActivationArguments activation)
+    private async void HandleActivation(AppActivationArguments activation)
+    {
+        try
+        {
+            if (activation.Data is Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs launchArgs)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(launchArgs.Arguments, @"--download-request\s+([a-f0-9]{32})");
+                if (match.Success)
+                {
+                    var path = System.IO.Path.Combine(Services.CoreClient.DataDirectory, "pending-downloads", match.Groups[1].Value + ".json");
+                    var request = System.Text.Json.Nodes.JsonNode.Parse(await System.IO.File.ReadAllTextAsync(path))!.AsObject();
+                    System.IO.File.Delete(path);
+                    new Views.DownloadWindow(request).Activate(); return;
+                }
+            }
+            var link = activation.Data switch
+            {
+                Windows.ApplicationModel.Activation.IProtocolActivatedEventArgs protocol => protocol.Uri.AbsoluteUri,
+                Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs launch => Services.GopeedLink.FromCommandLine(launch.Arguments),
+                _ => null
+            };
+            if (link is not null && Services.GopeedLink.Parse(link) is { Route: "create" } create)
+            {
+                new Views.DownloadWindow(create.Parameters ?? new System.Text.Json.Nodes.JsonObject()).Activate(); return;
+            }
+            EnsureMainWindow().Activate();
+            if (link is not null) ((MainWindow)Window).OpenProtocol(link);
+        }
+        catch (Exception error)
+        {
+            var main = EnsureMainWindow(); main.Activate(); main.ReportError("無法開啟下載：" + error.Message);
+        }
+    }
+    private MainWindow EnsureMainWindow()
     {
         if (Window is null) { Window = new MainWindow(); Window.Closed += (_, _) => Window = null!; }
-        Window.Activate();
-        var link = activation.Data switch
-        {
-            Windows.ApplicationModel.Activation.IProtocolActivatedEventArgs protocol => protocol.Uri.AbsoluteUri,
-            Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs launch => Services.GopeedLink.FromCommandLine(launch.Arguments),
-            _ => null
-        };
-        if (link is not null) ((MainWindow)Window).OpenProtocol(link);
-        if (activation.Data is Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs launchArgs)
-        {
-            var request = System.Text.RegularExpressions.Regex.Match(launchArgs.Arguments, @"--download-request\s+([a-f0-9]{32})");
-            if (request.Success) ((MainWindow)Window).OpenDownloadRequest(request.Groups[1].Value);
-        }
+        return (MainWindow)Window;
     }
 }

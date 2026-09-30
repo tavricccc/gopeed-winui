@@ -1,4 +1,4 @@
-#define AppVersion "0.1.3"
+#define AppVersion "0.2.0"
 [Setup]
 AppId={{B652BEF3-0741-4B5E-9066-C6F3EBF18622}
 AppName=Gopeed Native
@@ -24,8 +24,8 @@ LicenseFile=..\upstream\LICENSE
 Source: "..\artifacts\portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"
-Name: "{autodesktop}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"; Tasks: desktopicon
+Name: "{group}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"; AppUserModelID: "Tavric.GopeedNative"
+Name: "{autodesktop}\Gopeed Native"; Filename: "{app}\Gopeed.Native.exe"; Tasks: desktopicon; AppUserModelID: "Tavric.GopeedNative"
 
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\gopeed"; ValueType: string; ValueName: ""; ValueData: "URL:Gopeed Native Protocol"; Flags: uninsdeletekey

@@ -21,3 +21,7 @@ foreach (var newline in new[] { "\r", "\n", "\r\n" })
         if (value.Contains('\r') || value.Contains('\n')) throw new Exception("Newline leaked into HTTP header value");
 }
 Console.WriteLine("Header checks passed: WinUI CR, LF and CRLF; Sec-Ch-Ua quotes, Referer and Cookie preserved.");
+if (DownloadPresentation.ForStatus("done").Key != "open") throw new Exception("Completed download must prioritize opening the file");
+if (DownloadPresentation.ForStatus("pause").Key != "continue" || DownloadPresentation.ForStatus("error").Label != "重試下載") throw new Exception("Paused/failed downloads must prioritize resume/retry");
+if (DownloadPresentation.ForStatus("running").Key != "pause" || DownloadPresentation.ForStatus("unknown").Key != "none") throw new Exception("Running/unknown actions are incorrect");
+Console.WriteLine("Action checks passed: completed Open, paused Resume, failed Retry, running Pause, unknown disabled.");

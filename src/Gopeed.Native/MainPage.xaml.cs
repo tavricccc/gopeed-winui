@@ -6,6 +6,7 @@ using Gopeed_Native.ViewModels;
 using Gopeed_Native.Views;
 using Gopeed_Native.Services;
 using System.Diagnostics;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace Gopeed_Native;
 
@@ -62,19 +63,6 @@ public sealed partial class MainPage : Page
   }
   catch (Exception error) { ViewModel.Error = $"無法開啟 Gopeed 連結：{error.Message}"; }
  }
- public async void OpenDownloadRequest(string id)
- {
-  try
-  {
-   await ready.Task;
-   if (!ViewModel.IsConnected) return;
-   var path = Path.Combine(CoreClient.DataDirectory, "pending-downloads", id + ".json");
-   var request = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path))!.AsObject();
-   File.Delete(path);
-   new DownloadWindow(request).Activate();
-  }
-  catch (Exception error) { ViewModel.Error = $"無法開啟下載視窗：{error.Message}"; }
- }
  private void FilterChanged(object s, SelectionChangedEventArgs e) { if (FilterBox?.SelectedItem is ComboBoxItem item) { ViewModel.Filter = item.Tag.ToString()!; ViewModel.ApplyFilter(); } }
  private void SearchChanged(AutoSuggestBox s, AutoSuggestBoxTextChangedEventArgs e) { ViewModel.Search = s.Text; ViewModel.ApplyFilter(); }
  private async void PauseSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) await ViewModel.ActAsync("pause", [item]); }
@@ -82,9 +70,42 @@ public sealed partial class MainPage : Page
  private async void PauseAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("pause", ViewModel.VisibleItems.Where(i => i.CanPause));
  private async void ResumeAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("continue", ViewModel.VisibleItems.Where(i => i.CanResume));
  private async void RefreshClicked(object s, RoutedEventArgs e) => await ViewModel.RefreshAsync();
- private void OpenSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { IsComplete: true } item) OpenPath(item.FilePath); }
- private void OpenFolder(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) OpenPath(item.Folder); }
- private void OpenPath(string path) { try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch (Exception e) { ViewModel.Error = e.Message; } }
+ private async void PrimarySelected(object s, RoutedEventArgs e)
+ {
+  if (ViewModel.Selected is not { } item) return;
+  var action = DownloadPresentation.ForStatus(item.Status);
+  if (action.Key == "open") OpenSelected(s, e); else if (action.Key != "none") await ViewModel.ActAsync(action.Key, [item]);
+ }
+ private void OpenSelected(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { IsComplete: true } item) FileActions.Open(item.FilePath); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
+ private void OpenFolder(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
+ private void CopySelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) FileActions.Copy(item.Url); }
+ private async void PasteDownload(object s, RoutedEventArgs e)
+ {
+  try { var content = Clipboard.GetContent(); if (!content.Contains(StandardDataFormats.Text)) throw new FormatException("剪貼簿沒有文字連結。"); await AddText(await content.GetTextAsync()); }
+  catch (Exception ex) { ViewModel.Error = ex.Message; }
+ }
+ private async Task AddText(string text)
+ {
+  var links = text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+  if (links.Length == 0 || links.Any(link => !Uri.TryCreate(link, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https" or "magnet" or "file"))) throw new FormatException("請貼上 HTTP、HTTPS 或磁力下載連結。");
+  await AddDownloadAsync(new System.Text.Json.Nodes.JsonObject { ["req"] = new System.Text.Json.Nodes.JsonObject { ["url"] = string.Join("\n", links) } });
+ }
+ private void DownloadDragOver(object s, DragEventArgs e) { e.AcceptedOperation = e.DataView.Contains(StandardDataFormats.Text) || e.DataView.Contains(StandardDataFormats.WebLink) || e.DataView.Contains(StandardDataFormats.StorageItems) ? DataPackageOperation.Copy : DataPackageOperation.None; }
+ private async void DownloadDrop(object s, DragEventArgs e)
+ {
+  try
+  {
+   if (e.DataView.Contains(StandardDataFormats.WebLink)) await AddText((await e.DataView.GetWebLinkAsync()).AbsoluteUri);
+   else if (e.DataView.Contains(StandardDataFormats.Text)) await AddText(await e.DataView.GetTextAsync());
+   else if (e.DataView.Contains(StandardDataFormats.StorageItems))
+   {
+    var files = await e.DataView.GetStorageItemsAsync();
+    if (files.Count == 0 || files.Any(f => !f.Path.EndsWith(".torrent", StringComparison.OrdinalIgnoreCase))) throw new FormatException("拖放檔案目前接受 torrent 檔案。");
+    await AddDownloadAsync(new System.Text.Json.Nodes.JsonObject { ["req"] = new System.Text.Json.Nodes.JsonObject { ["url"] = string.Join("\n", files.Select(f => f.Path)) } });
+   }
+  }
+  catch (Exception ex) { ViewModel.Error = ex.Message; }
+ }
  private async void DeleteSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) await DeleteAsync(item); }
  private async Task DeleteAsync(DownloadItem item)
  {
@@ -100,9 +121,16 @@ public sealed partial class MainPage : Page
  }
  private void ListDoubleTapped(object s, DoubleTappedRoutedEventArgs e) { if (ViewModel.Selected?.IsComplete == true) OpenSelected(s, new()); else ShowDetails(s, new()); }
  private DownloadItem? ContextItem(object s) => ViewModel.VisibleItems.FirstOrDefault(i => i.Id == (s as MenuFlyoutItem)?.Tag?.ToString());
+ private async void ContextPrimary(object s, RoutedEventArgs e)
+ {
+  if (ContextItem(s) is not { } item) return;
+  var action = DownloadPresentation.ForStatus(item.Status);
+  if (action.Key == "open") { try { FileActions.Open(item.FilePath); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
+  else if (action.Key != "none") await ViewModel.ActAsync(action.Key, [item]);
+ }
  private async void ContextPause(object s, RoutedEventArgs e) { if (ContextItem(s) is { CanPause: true } item) await ViewModel.ActAsync("pause", [item]); }
  private async void ContextResume(object s, RoutedEventArgs e) { if (ContextItem(s) is { CanResume: true } item) await ViewModel.ActAsync("continue", [item]); }
- private void ContextFolder(object s, RoutedEventArgs e) { if (ContextItem(s) is { } item) OpenPath(item.Folder); }
+ private void ContextFolder(object s, RoutedEventArgs e) { try { if (ContextItem(s) is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
  private async void ContextDelete(object s, RoutedEventArgs e) { if (ContextItem(s) is { } item) await DeleteAsync(item); }
  private void NewShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { AddDownload(s, new()); e.Handled = true; }
  private void SearchShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { SearchBox.Focus(FocusState.Keyboard); e.Handled = true; }

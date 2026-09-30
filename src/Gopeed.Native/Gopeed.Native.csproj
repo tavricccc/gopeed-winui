@@ -14,7 +14,7 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.1.3</Version>
+    <Version>0.2.0</Version>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>true</SelfContained>
@@ -34,6 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="Assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Manifest Include="$(ApplicationManifest)" />
     <Content Include="..\..\core\gopeed-core.exe" Link="Engine\gopeed-core.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\upstream\LICENSE" Link="LICENSE-Gopeed.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

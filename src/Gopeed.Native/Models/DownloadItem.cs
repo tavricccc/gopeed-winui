@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Text.Json.Nodes;
+using Gopeed_Native.Services;
 
 namespace Gopeed_Native.Models;
 
@@ -25,7 +26,11 @@ public sealed class DownloadItem : ObservableObject
     public string SizeText => Size > 0 ? FormatBytes(Size) : "大小未知";
     public string TransferText => $"{FormatBytes(Downloaded)} / {SizeText}";
     public string SpeedText => Status == "running" ? FormatBytes(Speed) + "/s" : "—";
-    public string RemainingText => Speed > 0 && Size > Downloaded ? FormatTime((Size - Downloaded) / Speed) : "—";
+    public string RemainingText => Status == "running" && Speed > 0 && Size > Downloaded ? FormatTime((Size - Downloaded) / Speed) : "—";
+    public string PrimaryActionLabel => DownloadPresentation.ForStatus(Status).Label;
+    public string PrimaryActionGlyph => DownloadPresentation.ForStatus(Status).Glyph;
+    public string FileGlyph => DownloadPresentation.FileGlyph(Name);
+    public bool CanAct => DownloadPresentation.ForStatus(Status).Key != "none";
     public string FilePath
     {
         get

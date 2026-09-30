@@ -22,6 +22,11 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     public bool CanResumeSelected => Selected?.CanResume == true;
     public bool HasSelection => Selected is not null;
     public bool CanOpenSelected => Selected?.IsComplete == true;
+    public string PrimaryActionLabel => Selected?.PrimaryActionLabel ?? "選取下載";
+    public string PrimaryActionGlyph => Selected?.PrimaryActionGlyph ?? "\uE896";
+    public bool CanActSelected => Selected is not null && DownloadPresentation.ForStatus(Selected.Status).Key != "none";
+    public string EmptyTitle => items.Count == 0 ? "開始第一個下載" : "沒有符合條件的下載";
+    public string EmptyHint => items.Count == 0 ? "新增連結、從剪貼簿貼上，或拖入網址與 torrent 檔案。" : "試著清除搜尋，或切換為全部下載。";
     partial void OnSelectedChanged(DownloadItem? oldValue, DownloadItem? newValue)
     {
         if (oldValue is not null) oldValue.PropertyChanged -= SelectionUpdated;
@@ -33,6 +38,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(CanPauseSelected)); OnPropertyChanged(nameof(CanResumeSelected));
         OnPropertyChanged(nameof(CanOpenSelected));
+        OnPropertyChanged(nameof(PrimaryActionLabel)); OnPropertyChanged(nameof(PrimaryActionGlyph)); OnPropertyChanged(nameof(CanActSelected));
     }
 
     public async Task InitializeAsync()
@@ -69,6 +75,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             if (current < 0) VisibleItems.Insert(index, filtered[index]); else if (current != index) VisibleItems.Move(current, index);
         }
         if (Selected is not null && !VisibleItems.Contains(Selected)) Selected = null;
+        OnPropertyChanged(nameof(EmptyTitle)); OnPropertyChanged(nameof(EmptyHint));
     }
     public async Task ActAsync(string action, IEnumerable<DownloadItem> targets, bool deleteFiles = false)
     {

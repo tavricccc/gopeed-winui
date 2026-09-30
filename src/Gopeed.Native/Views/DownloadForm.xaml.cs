@@ -24,7 +24,24 @@ public sealed partial class DownloadForm : UserControl
  {
   this.core = core; this.initial = initial; this.owner = owner ?? App.WindowHandle; this.compact = compact; InitializeComponent();
   if (compact) { Links.Header = "來源網址"; Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; FileName.Header = "檔名"; }
-  Loaded += async (_, _) => { SetBusy(true); try { var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? ""; if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"); ApplyInitial(); if (initial is not null && Links.Text.Length > 0) await InspectAsync(Links.Text); } catch (Exception e) { ShowError(e); } finally { SetBusy(false); } };
+  Loaded += InitializeForm;
+ }
+ private async void InitializeForm(object sender, RoutedEventArgs e)
+ {
+  Loaded -= InitializeForm; SetBusy(true);
+  try
+  {
+   var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? "";
+   var prefs = UiPreferences.Load();
+   if (prefs.RememberDownloadDirectory && prefs.LastDownloadDirectory.Length > 0) Destination.Text = prefs.LastDownloadDirectory;
+   if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+   ApplyInitial();
+   var links = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+   if (initial is not null && links.Length == 1) await InspectAsync(links[0]);
+   else if (links.Length > 1) SetAction($"開始 {links.Length} 個下載");
+  }
+  catch (Exception error) { ShowError(error); }
+  finally { SetBusy(false); }
  }
  private void ApplyInitial()
  {
@@ -95,6 +112,7 @@ public sealed partial class DownloadForm : UserControl
   }
   catch (Exception e) { ShowError(e); }
   finally { SetBusy(false); }
+  if (complete) { var prefs = UiPreferences.Load(); if (prefs.RememberDownloadDirectory) { prefs.LastDownloadDirectory = Destination.Text.Trim(); prefs.Save(); } }
   return complete;
  }
  private async Task InspectAsync(string url)

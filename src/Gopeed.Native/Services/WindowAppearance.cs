@@ -1,0 +1,19 @@
+using Microsoft.UI.Xaml;
+
+namespace Gopeed_Native.Services;
+
+public static class WindowAppearance
+{
+    public static ElementTheme Theme
+    {
+        get
+        {
+            var path = Path.Combine(CoreClient.DataDirectory, "theme.txt");
+            return File.Exists(path) ? File.ReadAllText(path).Trim() switch { "1" => ElementTheme.Light, "2" => ElementTheme.Dark, _ => ElementTheme.Default } : ElementTheme.Default;
+        }
+    }
+    public static void SetIcon(Window window) => window.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
+    public static void InitializeProcess() => SetCurrentProcessExplicitAppUserModelID("Tavric.GopeedNative");
+    [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
+}

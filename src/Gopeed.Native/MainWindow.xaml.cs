@@ -19,7 +19,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
-        AppWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
+        Services.WindowAppearance.SetIcon(this);
         var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
         AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(1120 * scale), (int)(740 * scale)));
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
@@ -27,9 +27,7 @@ public sealed partial class MainWindow : Window
             presenter.PreferredMinimumWidth = (int)(640 * scale);
             presenter.PreferredMinimumHeight = (int)(480 * scale);
         }
-        var themePath = System.IO.Path.Combine(Services.CoreClient.DataDirectory, "theme.txt");
-        if (System.IO.File.Exists(themePath))
-            ((FrameworkElement)Content).RequestedTheme = System.IO.File.ReadAllText(themePath).Trim() switch { "1" => ElementTheme.Light, "2" => ElementTheme.Dark, _ => ElementTheme.Default };
+        ((FrameworkElement)Content).RequestedTheme = Services.WindowAppearance.Theme;
         ((FrameworkElement)Content).ActualThemeChanged += (_, _) => SyncTitleBarTheme();
         SyncTitleBarTheme();
 
@@ -39,7 +37,7 @@ public sealed partial class MainWindow : Window
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(nint hwnd);
     public void OpenProtocol(string link) => ((MainPage)RootFrame.Content).OpenProtocol(link);
-    public void OpenDownloadRequest(string id) => ((MainPage)RootFrame.Content).OpenDownloadRequest(id);
+    public void ReportError(string message) => ((MainPage)RootFrame.Content).ViewModel.Error = message;
     private void SyncTitleBarTheme()
     {
         var dark = ((FrameworkElement)Content).ActualTheme == ElementTheme.Dark;

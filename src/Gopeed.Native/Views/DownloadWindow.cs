@@ -17,12 +17,13 @@ public sealed class DownloadWindow : Window
     {
         this.request = request;
         Title = "確認下載 · Gopeed Native";
-        surface.RequestedTheme = ((FrameworkElement)App.Window.Content).RequestedTheme;
+        surface.RequestedTheme = WindowAppearance.Theme;
         Content = surface;
-        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
+        WindowAppearance.SetIcon(this);
         var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
         var area = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(AppWindow.Id, Microsoft.UI.Windowing.DisplayAreaFallback.Primary).WorkArea;
         AppWindow.Resize(new Windows.Graphics.SizeInt32(Math.Min((int)(640 * scale), area.Width), Math.Min((int)(540 * scale), area.Height)));
+        AppWindow.Move(new Windows.Graphics.PointInt32(area.X + (area.Width - AppWindow.Size.Width) / 2, area.Y + (area.Height - AppWindow.Size.Height) / 2));
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
         {
             presenter.PreferredMinimumWidth = (int)(540 * scale);
@@ -52,7 +53,7 @@ public sealed class DownloadWindow : Window
     {
         Title = "下載進度 · Gopeed Native";
         surface.Children.Clear();
-        progress = new DownloadProgressPage(core, id); surface.Children.Add(progress);
+        progress = new DownloadProgressPage(core, id, Close); surface.Children.Add(progress);
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter) presenter.PreferredMinimumHeight = (int)(400 * GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(AppWindow.Size.Width, (int)(480 * GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0)));
     }
