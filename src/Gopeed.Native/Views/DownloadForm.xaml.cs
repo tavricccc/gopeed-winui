@@ -21,13 +21,16 @@ public sealed partial class DownloadForm : UserControl
  public string ActionText { get; private set; } = "檢查連結";
  public bool IsBusy { get; private set; }
  public event Action? StateChanged;
+ public event Action? LayoutChanged;
+ public double MeasureContentHeight(double width) { FormContent.Measure(new Windows.Foundation.Size(width, double.PositiveInfinity)); return FormContent.DesiredSize.Height; }
  public DownloadForm(CoreClient core, JsonObject? initial = null, nint? owner = null, bool compact = false)
  {
   this.core = core; this.initial = initial; this.owner = owner ?? App.WindowHandle; this.compact = compact; InitializeComponent();
   OptionsSurface.Children.Add(requestOptions);
   requestOptions.RequestChanged += InvalidateResolution;
   Headers.TextChanged += (_, _) => InvalidateResolution();
-  if (compact) { Links.Header = "來源網址"; Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; RecentLinksButton.Visibility = Visibility.Collapsed; FileName.Header = "檔名"; }
+  FormContent.SizeChanged += (_, _) => LayoutChanged?.Invoke();
+  if (compact) { Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; RecentLinksButton.Visibility = Visibility.Collapsed; }
   Loaded += InitializeForm;
  }
  private async void InitializeForm(object sender, RoutedEventArgs e)
@@ -137,7 +140,7 @@ public sealed partial class DownloadForm : UserControl
    var displayName = resource["name"]?.GetValue<string>();
    if (string.IsNullOrEmpty(displayName)) displayName = resource["files"]!.AsArray()[0]!["name"]!.GetValue<string>();
    var size = resource["size"]!.GetValue<long>();
-   Preview.Text = compact ? $"大小：{(size > 0 ? DownloadItem.FormatBytes(size) : "由伺服器於下載時提供")}" : $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
+   Preview.Text = size > 0 ? DownloadItem.FormatBytes(size) : "由來源於下載時提供";
    Files.Items.Clear(); var index = 0;
    foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(new ResolvedFile(index++, Path.Combine(file!["path"]?.GetValue<string>() ?? "", file["name"]!.GetValue<string>()), file["size"]!.GetValue<long>()));
    Files.SelectAll(); Files.Visibility = Files.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed; FileSelectionActions.Visibility = Files.Visibility;
@@ -159,7 +162,7 @@ public sealed partial class DownloadForm : UserControl
   if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) Links.Text = (string)history.SelectedItem;
  }
  private void ShowError(Exception e) { Message.Message = UserError.Message(e); Message.IsOpen = true; }
- private void SetAction(string text) { ActionText = text; StateChanged?.Invoke(); }
+ private void SetAction(string text) { ActionText = text; StateChanged?.Invoke(); LayoutChanged?.Invoke(); }
  private void SetBusy(bool value) { IsBusy = value; Busy.IsActive = value; Busy.Visibility = value ? Visibility.Visible : Visibility.Collapsed; StateChanged?.Invoke(); }
  private sealed record ResolvedFile(int Index, string Name, long Size) { public override string ToString() => $"{Name} · {DownloadItem.FormatBytes(Size)}"; }
 }

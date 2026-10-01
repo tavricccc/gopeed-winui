@@ -1,16 +1,17 @@
 <UserControl x:Class="Gopeed_Native.Views.DownloadForm" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
- <ScrollViewer><StackPanel Spacing="14" MinWidth="420">
-  <InfoBar x:Name="Message" Severity="Error" IsOpen="False" IsClosable="False"/>
-  <TextBox x:Name="Links" Header="網址或磁力連結" PlaceholderText="貼上連結；批次下載請每行一個" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" MaxHeight="150" AutomationProperties.AutomationId="DownloadLinks" TextChanged="InputChanged"/>
-  <TextBlock x:Name="Preview" TextWrapping="Wrap"/>
-  <Button x:Name="TorrentPickerButton" Content="選擇 torrent 檔案" Click="PickTorrent"/>
-  <ComboBox x:Name="Category" Header="下載分類" HorizontalAlignment="Stretch" Visibility="Collapsed" SelectionChanged="CategoryChanged"/>
-  <Grid ColumnSpacing="8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="Destination" Header="儲存位置" AutomationProperties.AutomationId="DownloadDestination"/><Button Grid.Column="1" Content="瀏覽…" Click="PickFolder" VerticalAlignment="Bottom"/></Grid>
-  <TextBox x:Name="FileName" Header="檔名（單一檔案，可留空）" PlaceholderText="使用伺服器提供的名稱"/>
-  <Expander Header="請求與下載選項" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><StackPanel x:Name="OptionsSurface" Spacing="12"><CheckBox x:Name="DirectDownload" Content="直接開始下載" Checked="DirectChanged" Unchecked="DirectChanged"/><NumberBox x:Name="Connections" Header="連線數" Value="8" Minimum="1" Maximum="256" SpinButtonPlacementMode="Compact"/><TextBox x:Name="Headers" Header="HTTP 標頭" PlaceholderText="每行一個，例如 Referer: https://example.com" AcceptsReturn="True" TextWrapping="Wrap" Height="90"/></StackPanel></Expander>
-  <Button x:Name="RecentLinksButton" Content="最近使用的連結" Click="ShowRecent" HorizontalAlignment="Left"/>
-  <StackPanel x:Name="FileSelectionActions" Orientation="Horizontal" Spacing="8" Visibility="Collapsed"><Button Content="全選檔案" Click="SelectAllFiles"/><Button Content="取消全選" Click="SelectNoFiles"/></StackPanel>
-  <ListView x:Name="Files" SelectionMode="Multiple" MaxHeight="180" Visibility="Collapsed"/>
-  <ProgressRing x:Name="Busy" IsActive="False" Width="24" Height="24" HorizontalAlignment="Left" Visibility="Collapsed"/>
- </StackPanel></ScrollViewer>
+ <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+  <StackPanel x:Name="FormContent" Spacing="10">
+   <InfoBar x:Name="Message" Severity="Error" IsOpen="False" IsClosable="False"/>
+   <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="檔名" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBox x:Name="FileName" Grid.Column="1" PlaceholderText="使用來源提供的名稱" AutomationProperties.Name="檔名"/></Grid>
+   <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="來源" VerticalAlignment="Top" Margin="0,6,0,0" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBox x:Name="Links" Grid.Column="1" PlaceholderText="貼上網址；批次下載請每行一個" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="110" AutomationProperties.AutomationId="DownloadLinks" AutomationProperties.Name="來源網址" TextChanged="InputChanged"/></Grid>
+   <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="大小" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBlock x:Name="Preview" Grid.Column="1" Text="確認後取得" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/></Grid>
+   <ComboBox x:Name="Category" Header="下載分類" HorizontalAlignment="Stretch" Visibility="Collapsed" SelectionChanged="CategoryChanged"/>
+   <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="存到" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/><TextBox x:Name="Destination" Grid.Column="1" AutomationProperties.AutomationId="DownloadDestination" AutomationProperties.Name="儲存位置"/><Button Grid.Column="2" Content="瀏覽…" Click="PickFolder"/></Grid>
+   <StackPanel Orientation="Horizontal" Spacing="8"><Button x:Name="TorrentPickerButton" Content="選擇 Torrent 檔案" Click="PickTorrent" Style="{ThemeResource SubtleButtonStyle}"/><Button x:Name="RecentLinksButton" Content="最近使用的連結" Click="ShowRecent" Style="{ThemeResource SubtleButtonStyle}"/></StackPanel>
+   <Expander Header="下載選項" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"><StackPanel x:Name="OptionsSurface" Spacing="12"><CheckBox x:Name="DirectDownload" Content="直接開始下載" Checked="DirectChanged" Unchecked="DirectChanged"/><NumberBox x:Name="Connections" Header="連線數" Value="8" Minimum="1" Maximum="256" SpinButtonPlacementMode="Compact"/><TextBox x:Name="Headers" Header="HTTP 標頭" PlaceholderText="每行一個，例如 Referer: https://example.com" AcceptsReturn="True" TextWrapping="Wrap" Height="90"/></StackPanel></Expander>
+   <StackPanel x:Name="FileSelectionActions" Orientation="Horizontal" Spacing="8" Visibility="Collapsed"><Button Content="全選檔案" Click="SelectAllFiles"/><Button Content="取消全選" Click="SelectNoFiles"/></StackPanel>
+   <ListView x:Name="Files" SelectionMode="Multiple" MaxHeight="160" Visibility="Collapsed"/>
+   <ProgressRing x:Name="Busy" IsActive="False" Width="18" Height="18" HorizontalAlignment="Left" Visibility="Collapsed"/>
+  </StackPanel>
+ </ScrollViewer>
 </UserControl>

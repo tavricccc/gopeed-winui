@@ -23,7 +23,7 @@ public sealed partial class MainWindow : Window
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         Closed += (_, _) => Services.ShareFiles.Release(hwnd);
         var scale = GetDpiForWindow(hwnd) / 96.0;
-        AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(1120 * scale), (int)(740 * scale)));
+        AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(960 * scale), (int)(560 * scale)));
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
         {
             presenter.PreferredMinimumWidth = (int)(640 * scale);

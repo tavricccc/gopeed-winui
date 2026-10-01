@@ -30,6 +30,10 @@ public sealed class DownloadItem : ObservableObject
     public bool IsComplete => Status == "done";
     public string SizeText => Size > 0 ? FormatBytes(Size) : "大小未知";
     public string TransferText => $"{FormatBytes(Downloaded)} / {SizeText}" + (ExtractionText.Length > 0 ? $" · {ExtractionText}" : "");
+    public string TransferSizeText => IsComplete ? SizeText : $"{FormatBytes(Downloaded)} / {SizeText}";
+    public Microsoft.UI.Xaml.Visibility ProgressVisibility => !IsComplete && Size > 0 && Status != "error" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+    public string RowProgressText => Status == "running" && Size > 0 ? $"{Percent:0}%" : StatusText;
+    public string DetailsText => $"{Name}\n{StatusText} · {TransferText}\n速度：{SpeedText} · 剩餘 {RemainingText}\n{FilePath}\n{Url}";
     public long Uploaded => Data["progress"]?["uploaded"]?.GetValue<long>() ?? 0;
     public long UploadSpeed => Data["progress"]?["uploadSpeed"]?.GetValue<long>() ?? 0;
     public string SpeedText => Status == "running" ? FormatBytes(Speed) + "/s" : Uploading ? "↑ " + FormatBytes(UploadSpeed) + "/s" : "—";

@@ -10,12 +10,15 @@ public sealed partial class DownloadConfirmationPage : Page
     private readonly DownloadForm form;
     public event Action<string>? Started;
     public event Action? Cancelled;
+    public event Action? LayoutChanged;
+    public double PreferredHeight(double width) => form.MeasureContentHeight(width - 40) + 88;
     public DownloadConfirmationPage(CoreClient core, JsonObject request, nint owner)
     {
         InitializeComponent();
         form = new DownloadForm(core, request, owner, compact: true);
         FormHost.Content = form;
         form.StateChanged += () => { StartButton.Content = form.ActionText; StartButton.IsEnabled = !form.IsBusy; };
+        form.LayoutChanged += () => LayoutChanged?.Invoke();
     }
     private async void Start(object sender, RoutedEventArgs e)
     {

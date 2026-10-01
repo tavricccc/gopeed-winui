@@ -20,16 +20,9 @@ public sealed partial class MainPage : Page
  public MainPage()
  {
   InitializeComponent(); Loaded += Start;
-  SizeChanged += (_, e) =>
-  {
-   var wide = e.NewSize.Width >= 1000;
-   DetailColumn.Width = new GridLength(wide ? 280 : 0);
-   DetailsPane.Visibility = wide ? Visibility.Visible : Visibility.Collapsed;
-  };
   Unloaded += (_, _) => { timer.Stop(); ViewModel.Dispose(); };
   ViewModel.VisibleItems.CollectionChanged += (_, _) => EmptyState.Visibility = ViewModel.VisibleItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
   ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Error) && ViewModel.Error.Length > 0) { ErrorBar.Message = ViewModel.Error; ErrorBar.IsOpen = true; } };
-  ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Selected)) { SelectionDetails.Visibility = ViewModel.HasSingleSelection ? Visibility.Visible : Visibility.Collapsed; DetailsHint.Visibility = ViewModel.HasSingleSelection ? Visibility.Collapsed : Visibility.Visible; } };
   timer.Tick += async (_, _) => { if (refreshing || !ViewModel.IsConnected) return; refreshing = true; await ViewModel.RefreshAsync(); refreshing = false; };
  }
  private async void Start(object sender, RoutedEventArgs e) { Loaded -= Start; await ViewModel.InitializeAsync(); timer.Start(); ready.SetResult(); if (ViewModel.IsConnected && UiPreferences.Load().CheckForUpdates) { try { var update = await UpdateService.CheckAsync(ViewModel.Core); if (update is not null) { ErrorBar.Severity = InfoBarSeverity.Informational; ErrorBar.Message = $"有新版本：{update.Version}"; var button = new Button { Content = "下載更新" }; button.Click += async (_, _) => await UpdateService.PromptAsync(ViewModel.Core, update, XamlRoot); ErrorBar.ActionButton = button; ErrorBar.IsOpen = true; } } catch (Exception) { /* A background update check must not interrupt downloads. Manual checks report errors. */ } } }
@@ -52,12 +45,11 @@ public sealed partial class MainPage : Page
    var link = GopeedLink.Parse(value); await ready.Task;
    if (link.Route == "extension")
    {
-    Navigation.SelectedItem = Navigation.MenuItems.OfType<NavigationViewItem>().First(i => i.Tag?.ToString() == "extensions");
-    SettingsFrame.Content = new ExtensionsPage(ViewModel, link.Parameters?["url"]?.GetValue<string>());
+    OpenSection(new ExtensionsPage(ViewModel, link.Parameters?["url"]?.GetValue<string>()));
    }
    else
    {
-    Navigation.SelectedItem = Navigation.MenuItems.OfType<NavigationViewItem>().First(i => i.Tag?.ToString() == "downloads");
+    ShowDownloads(this, new());
     if (link.Route == "create") new DownloadWindow(link.Parameters ?? new System.Text.Json.Nodes.JsonObject()).Activate();
    }
   }
@@ -140,13 +132,8 @@ public sealed partial class MainPage : Page
  private void NewShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { AddDownload(s, new()); e.Handled = true; }
  private void SearchShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { SearchBox.Focus(FocusState.Keyboard); e.Handled = true; }
  private async void RefreshShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { await ViewModel.RefreshAsync(); e.Handled = true; }
- private void NavigationChanged(NavigationView s, NavigationViewSelectionChangedEventArgs e)
- {
-  if (SettingsFrame is null) return;
-  if (!ViewModel.IsConnected && (e.IsSettingsSelected || (e.SelectedItem as NavigationViewItem)?.Tag?.ToString() == "extensions")) { Navigation.SelectedItem = Navigation.MenuItems[0]; return; }
-  var downloads = !e.IsSettingsSelected && (e.SelectedItem as NavigationViewItem)?.Tag?.ToString() != "extensions";
-  DownloadsSurface.Visibility = downloads ? Visibility.Visible : Visibility.Collapsed;
-  SettingsFrame.Visibility = downloads ? Visibility.Collapsed : Visibility.Visible;
-  if (!downloads && ViewModel.IsConnected) SettingsFrame.Content = e.IsSettingsSelected ? new SettingsPage(ViewModel) : new ExtensionsPage(ViewModel);
- }
+ private void OpenSection(Page page) { DownloadsSurface.Visibility = Visibility.Collapsed; SettingsFrame.Content = page; SettingsFrame.Visibility = Visibility.Visible; BackToDownloads.Visibility = Visibility.Visible; }
+ private void ShowDownloads(object sender, RoutedEventArgs args) { SettingsFrame.Content = null; SettingsFrame.Visibility = Visibility.Collapsed; DownloadsSurface.Visibility = Visibility.Visible; BackToDownloads.Visibility = Visibility.Collapsed; }
+ private void ShowSettings(object sender, RoutedEventArgs args) => OpenSection(new SettingsPage(ViewModel));
+ private void ShowExtensions(object sender, RoutedEventArgs args) => OpenSection(new ExtensionsPage(ViewModel));
 }
