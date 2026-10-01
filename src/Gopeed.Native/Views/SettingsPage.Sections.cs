@@ -62,13 +62,13 @@ public sealed partial class SettingsPage
         remote.Children.Add(new TextBox { Header = "伺服器位址", IsReadOnly = true, Text = new Uri(vm.Core.ApiAddress).Authority });
         remote.Children.Add(new PasswordBox { Header = "API Token", Password = vm.Core.Token, PasswordRevealMode = PasswordRevealMode.Peek });
         var copy = new Button { Content = "複製 API Token" }; copy.Click += (_, _) => { FileActions.Copy(vm.Core.Token); Success("Token 已複製。"); }; remote.Children.Add(copy); remote.Children.Add(apiPort);
-        browser.Children.Add(new Expander { Header = "遠端下載連線", Content = remote, HorizontalAlignment = HorizontalAlignment.Stretch });
+        browser.Children.Add(new Expander { Header = "遠端下載連線", Content = remote, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch });
     }
     private void BuildAutomation()
     {
         var panel = Section("完成後的動作");
         fields.Toggle(panel, "傳送 Webhook 通知", "webhook.enable"); var urls = fields.Text(panel, "Webhook 網址（每行一個）", "webhook.urls", true);
-        var test = new Button { Content = "測試 Webhook" }; test.Click += async (_, _) => { test.IsEnabled = false; try { foreach (var url in ConfigJson.Lines(urls.Text)) await vm.Core.SendAsync(HttpMethod.Post, "webhook/test", new JsonObject { ["url"] = url }); Success("測試通知已傳送。"); } catch (Exception error) { Report(error); } finally { test.IsEnabled = true; } }; panel.Children.Add(test);
+        var test = new Button { Content = "測試 Webhook" }; test.Click += async (_, _) => { test.IsEnabled = false; try { var targets = ConfigJson.Lines(urls.Text); if (targets.Length == 0) throw new FormatException("請先輸入 Webhook 網址。"); foreach (var url in targets) { if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) throw new FormatException("請輸入有效的 Webhook 網址。"); await vm.Core.SendAsync(HttpMethod.Post, "webhook/test", new JsonObject { ["url"] = url }); } Success("測試通知已傳送。"); } catch (Exception error) { Report(error); } finally { test.IsEnabled = true; } }; panel.Children.Add(test);
         fields.Toggle(panel, "完成或失敗後執行程式", "script.enable"); fields.Text(panel, "程式或指令檔路徑（每行一個）", "script.paths", true);
     }
     private void BuildAbout()
@@ -79,7 +79,7 @@ public sealed partial class SettingsPage
         var update = new Button { Content = "檢查更新" }; update.Click += async (_, _) => { update.IsEnabled = false; try { var release = await UpdateService.CheckAsync(vm.Core); if (release is null) Success("已是最新版本。"); else await UpdateService.PromptAsync(vm.Core, release, XamlRoot); } catch (Exception error) { Report(error); } finally { update.IsEnabled = true; } }; panel.Children.Add(update);
         panel.Children.Add(new HyperlinkButton { Content = "專案首頁", NavigateUri = new Uri("https://github.com/tavricccc/gopeed-winui") });
         panel.Children.Add(new HyperlinkButton { Content = "授權與致謝", NavigateUri = new Uri("https://github.com/tavricccc/gopeed-winui/blob/winui-native/LICENSE") });
-        var logs = new Button { Content = "開啟記錄資料夾" }; logs.Click += (_, _) => FileActions.Open(CoreClient.DataDirectory); panel.Children.Add(logs);
-        var stop = new Button { Content = "結束程式並停止下載" }; stop.Click += async (_, _) => { var dialog = new ContentDialog { Title = "停止所有下載並結束？", Content = "下載進度會保留，下次開啟可繼續。", PrimaryButtonText = "停止並結束", CloseButtonText = "取消" }; if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) { await vm.Core.StopAsync(); Application.Current.Exit(); } }; panel.Children.Add(stop);
+        var logs = new Button { Content = "開啟記錄資料夾" }; logs.Click += (_, _) => FileActions.Open(Path.Combine(CoreClient.DataDirectory, "logs")); panel.Children.Add(logs);
+        var stop = new Button { Content = "結束程式並停止下載" }; stop.Click += async (_, _) => { var dialog = new ContentDialog { Title = "停止所有下載並結束？", Content = "下載進度會保留，下次開啟可繼續。", PrimaryButtonText = "停止並結束", CloseButtonText = "取消" }; if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) { try { await vm.Core.StopAsync(); Application.Current.Exit(); } catch (Exception error) { Report(error); } } }; panel.Children.Add(stop);
     }
 }

@@ -98,6 +98,7 @@ func main() {
 	api.Handler = browserConfirmation(api.Handler, token, func(body []byte) (string, error) {
 		return openDownloadRequest(*root, *ui, body)
 	})
+	api.Handler = localExtensions(api.Handler, token)
 	go api.Serve(apiListener)
 	lifecycle := trackLifecycle(rest.Downloader)
 	config, err := rest.Downloader.GetConfig()

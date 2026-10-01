@@ -14,7 +14,7 @@ public sealed partial class SettingsPage : Page
     private readonly DownloadsViewModel vm;
     private readonly SettingsFields fields = new();
     private readonly InfoBar message = new() { IsClosable = true };
-    private readonly StackPanel sections = new() { Spacing = 16, MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly StackPanel sections = new() { Spacing = 16, MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Left };
     private readonly ComboBox theme = new() { Header = "外觀", Items = { "跟隨 Windows", "淺色", "深色" }, SelectedIndex = 0 };
     private readonly CheckBox remember = new() { Content = "記住上次使用的下載位置" };
     private readonly CheckBox closeProgress = new() { Content = "開啟檔案後關閉下載視窗" };
@@ -34,13 +34,14 @@ public sealed partial class SettingsPage : Page
         var save = NativeButtons.Create("儲存設定", "\uE74E", true); save.Click += Save;
         var surface = new Grid { RowSpacing = 16 };
         surface.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); surface.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        surface.Children.Add(new ScrollViewer { Content = sections, Padding = new Thickness(0,0,16,16), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        surface.Children.Add(new ScrollViewer { Content = sections, Padding = new Thickness(0,0,16,16), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollMode = ScrollMode.Disabled, HorizontalContentAlignment = HorizontalAlignment.Left });
         Grid.SetRow(save, 1); surface.Children.Add(save); Content = surface; Loaded += Load;
+        SizeChanged += (_, args) => sections.Width = Math.Min(760, Math.Max(0, args.NewSize.Width - 16));
     }
     private StackPanel Section(string title, bool expanded = false)
     {
         var panel = new StackPanel { Spacing = 12 };
-        sections.Children.Add(new Expander { Header = title, IsExpanded = expanded, Content = panel, HorizontalAlignment = HorizontalAlignment.Stretch }); return panel;
+        sections.Children.Add(new Expander { Header = title, IsExpanded = expanded, Content = panel, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch }); return panel;
     }
     private void BuildGeneral()
     {

@@ -37,8 +37,8 @@ public sealed partial class ExtensionsPage : Page
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var install = NativeButtons.Create("安裝", "\uE896", true); install.Click += async (_, _) => await Install(url.Text.Trim(), install); actions.Children.Add(install);
         var local = new Button { Content = "選擇本機資料夾…" }; local.Click += async (_, _) => { var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, App.WindowHandle); var picked = await picker.PickSingleFolderAsync(); if (picked is not null) await Install(picked.Path, local); }; actions.Children.Add(local);
-        installPanel.Children.Add(actions); panel.Children.Add(new Expander { Header = "從其他來源安裝", IsExpanded = repository is not null, Content = installPanel, HorizontalAlignment = HorizontalAlignment.Stretch });
-        Content = new ScrollViewer { Content = panel, Padding = new Thickness(0,0,16,24) };
+        installPanel.Children.Add(actions); panel.Children.Insert(2, new Expander { Header = "從其他來源安裝", IsExpanded = repository is not null, Content = installPanel, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch });
+        Content = new ScrollViewer { Content = panel, Padding = new Thickness(0,0,16,24), HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollMode = ScrollMode.Disabled, HorizontalContentAlignment = HorizontalAlignment.Left };
         search.QuerySubmitted += async (_, _) => await LoadStore(true); sort.SelectionChanged += async (_, _) => { if (IsLoaded) await LoadStore(true); }; more.Click += async (_, _) => await LoadStore(false);
         Loaded += async (_, _) => { await ReloadInstalled(); await LoadStore(true); };
     }

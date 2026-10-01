@@ -26,6 +26,7 @@ public sealed class DownloadProgressPage : Page
     private readonly TextBlock folder = new() { TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
     private readonly Button primary = NativeButtons.Create("正在連接…", "\uE896", true);
     private readonly Button browse = NativeButtons.Create("儲存資料夾", "\uE8B7");
+    private readonly Button stopSeed = NativeButtons.Create("停止做種", "\uE769");
     private readonly CheckBox closeAfterOpen = new() { Content = "開啟檔案後關閉此視窗" };
     private readonly Expander details = new() { Header = "來源與詳細資訊", HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly InfoBar error = new() { Severity = InfoBarSeverity.Error };
@@ -54,6 +55,7 @@ public sealed class DownloadProgressPage : Page
         content.Children.Add(new TextBlock { Text = "關閉視窗仍會繼續下載。", Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"] });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         buttons.Children.Add(primary); buttons.Children.Add(browse);
+        stopSeed.Visibility = Visibility.Collapsed; buttons.Children.Add(stopSeed); stopSeed.Click += async (_, _) => { try { await core.SendAsync(HttpMethod.Put, $"tasks/{id}/pause"); await Refresh(); } catch (Exception error) { ShowError(error); } };
         var dismiss = NativeButtons.Create("關閉", "\uE711"); dismiss.Click += (_, _) => close(); buttons.Children.Add(dismiss);
         var grid = new Grid { Padding = new Thickness(24), RowSpacing = 20 };
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -76,7 +78,7 @@ public sealed class DownloadProgressPage : Page
             stateIcon.Foreground = (Brush)Application.Current.Resources[item.IsComplete ? "SystemFillColorSuccessBrush" : "TextFillColorSecondaryBrush"];
             name.Text = item.Name; status.Text = item.IsProcessing ? item.ExtractionText : item.ExtractionStatus == "error" ? "解壓縮失敗，原始檔案仍可開啟。" : item.IsComplete ? "檔案已儲存，可直接開啟或在資料夾中顯示。" : $"{item.Percent:0.0}% · {item.Protocol}";
             name.CanDrag = item.IsComplete && !item.IsProcessing; dragHint.Visibility = name.CanDrag ? Visibility.Visible : Visibility.Collapsed;
-            progress.Value = item.Percent; progress.IsIndeterminate = item.IsIndeterminate; progress.Visibility = item.IsComplete ? Visibility.Collapsed : Visibility.Visible;
+            progress.Value = item.IsProcessing ? item.Data["progress"]?["extractProgress"]?.GetValue<double>() ?? 0 : item.Percent; progress.IsIndeterminate = item.IsIndeterminate || item.ExtractionStatus == "waitingParts"; progress.Visibility = item.IsComplete && !item.IsProcessing ? Visibility.Collapsed : Visibility.Visible; stopSeed.Visibility = item.Uploading ? Visibility.Visible : Visibility.Collapsed;
             transfer.Text = item.Uploading ? $"已上傳 {DownloadItem.FormatBytes(item.Uploaded)} · {item.SpeedText}" : item.IsComplete ? $"大小：{item.SizeText}" : $"{item.TransferText} · {item.SpeedText} · 剩餘 {item.RemainingText}";
             folder.Text = item.OpenPath; source.Text = item.Url;
             closeAfterOpen.Visibility = item.IsComplete ? Visibility.Visible : Visibility.Collapsed;
