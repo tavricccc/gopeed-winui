@@ -18,7 +18,7 @@ public sealed partial class ExtensionsPage
             {
                 var ext = node!.AsObject(); var identity = ext["identity"]!.GetValue<string>(); identities.Add(identity); var route = "extensions/" + Uri.EscapeDataString(identity);
                 var section = new StackPanel { Spacing = 10 };
-                section.Children.Add(new TextBlock { Text = $"{ext["title"]}  {ext["version"]}", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
+                section.Children.Add(new TextBlock { Text = $"{ext["title"]}  {ext["version"]}", Style = (Style)Application.Current.Resources["CompactSectionTitleStyle"] });
                 section.Children.Add(new TextBlock { Text = ext["description"]?.ToString() ?? "", TextWrapping = TextWrapping.Wrap });
                 var enabled = new ToggleSwitch { Header = "啟用", IsOn = ext["disabled"]?.GetValue<bool>() != true };
                 enabled.Toggled += async (_, _) => { enabled.IsEnabled = false; try { await vm.Core.SendAsync(HttpMethod.Put, route+"/switch", new JsonObject { ["status"] = enabled.IsOn }); } catch (Exception error) { Error(error); await ReloadInstalled(); } finally { enabled.IsEnabled = true; } }; section.Children.Add(enabled);

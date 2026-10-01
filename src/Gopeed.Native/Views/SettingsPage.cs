@@ -29,7 +29,7 @@ public sealed partial class SettingsPage : Page
     public SettingsPage(DownloadsViewModel viewModel)
     {
         vm = viewModel;
-        sections.Children.Add(new TextBlock { Text = "設定", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] });
+        sections.Children.Add(new TextBlock { Text = "設定", Style = (Style)Application.Current.Resources["CompactPageTitleStyle"] });
         sections.Children.Add(message); BuildGeneral(); BuildProtocols(); BuildNetwork(); BuildAutomation(); BuildAbout();
         var save = NativeButtons.Create("儲存設定", "\uE74E", true); save.Click += Save;
         var surface = new Grid { RowSpacing = 16 };

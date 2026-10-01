@@ -25,7 +25,7 @@ public sealed partial class ExtensionsPage : Page
     {
         vm = viewModel; url.Text = repository ?? "";
         var panel = new StackPanel { Spacing = 16, MaxWidth = 800, HorizontalAlignment = HorizontalAlignment.Stretch };
-        panel.Children.Add(new TextBlock { Text = "擴充功能", Style = (Style)Application.Current.Resources["TitleTextBlockStyle"] }); panel.Children.Add(message);
+        panel.Children.Add(new TextBlock { Text = "擴充功能", Style = (Style)Application.Current.Resources["CompactPageTitleStyle"] }); panel.Children.Add(message);
         var tabs = new Pivot();
         var browse = new StackPanel { Spacing = 16 };
         var commands = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { search, sort } };
@@ -59,7 +59,7 @@ public sealed partial class ExtensionsPage : Page
             foreach (var node in data["data"]!.AsArray())
             {
                 var ext = node!; var section = new StackPanel { Spacing = 8 };
-                section.Children.Add(new TextBlock { Text = $"{ext["title"]}  {ext["version"]}", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"], TextWrapping = TextWrapping.Wrap });
+                section.Children.Add(new TextBlock { Text = $"{ext["title"]}  {ext["version"]}", Style = (Style)Application.Current.Resources["CompactSectionTitleStyle"], TextWrapping = TextWrapping.Wrap });
                 section.Children.Add(new TextBlock { Text = ext["description"]?.ToString() ?? "", TextWrapping = TextWrapping.Wrap });
                 section.Children.Add(new TextBlock { Text = $"{ext["author"]} · 收藏 {ext["stars"]} · 安裝 {ext["installCount"]}", Style = (Style)Application.Current.Resources["CaptionTextBlockStyle"] });
                 var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };

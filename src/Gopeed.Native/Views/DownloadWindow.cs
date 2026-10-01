@@ -10,6 +10,7 @@ public sealed class DownloadWindow : Window
     private readonly Grid surface = new();
     private readonly CoreClient core = new();
     private readonly JsonObject request;
+    private readonly bool compact;
     private bool closed;
     private DownloadProgressPage? progress;
     private Func<double,double>? preferredHeight;
@@ -17,11 +18,12 @@ public sealed class DownloadWindow : Window
     private bool fitQueued;
     private Windows.Graphics.SizeInt32 lastClientSize;
 
-    public DownloadWindow(JsonObject request)
+    public DownloadWindow(JsonObject request, bool compact = true)
     {
-        this.request = request;
+        this.request = request; this.compact = compact;
         Title = "確認下載 · Gopeed Native";
         surface.RequestedTheme = WindowAppearance.Theme;
+        surface.Style = (Style)Application.Current.Resources["DownloadSurfaceStyle"];
         Content = surface;
         WindowAppearance.SetIcon(this);
         var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
@@ -51,7 +53,7 @@ public sealed class DownloadWindow : Window
         }
         if (closed) return;
         if (await TryUpdateSource()) return;
-        var page = new DownloadConfirmationPage(core, request, WinRT.Interop.WindowNative.GetWindowHandle(this));
+        var page = new DownloadConfirmationPage(core, request, WinRT.Interop.WindowNative.GetWindowHandle(this), compact);
         preferredHeight = page.PreferredHeight;
         page.LayoutChanged += RequestFit;
         page.Started += ShowProgress;

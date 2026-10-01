@@ -52,7 +52,7 @@ public sealed partial class DownloadForm : UserControl
    else if (links.Length > 1) SetAction($"開始 {links.Length} 個下載");
   }
   catch (Exception error) { ShowError(error); }
-  finally { SetBusy(false); }
+  finally { SetBusy(false); if (ConfigJson.Lines(Links.Text).Length == 0) Links.Focus(FocusState.Programmatic); else FileName.Focus(FocusState.Programmatic); }
  }
  private void ApplyInitial()
  {

@@ -12,10 +12,10 @@ public sealed partial class DownloadConfirmationPage : Page
     public event Action? Cancelled;
     public event Action? LayoutChanged;
     public double PreferredHeight(double width) => form.MeasureContentHeight(width - 40) + 88;
-    public DownloadConfirmationPage(CoreClient core, JsonObject request, nint owner)
+    public DownloadConfirmationPage(CoreClient core, JsonObject request, nint owner, bool compact = true)
     {
         InitializeComponent();
-        form = new DownloadForm(core, request, owner, compact: true);
+        form = new DownloadForm(core, request, owner, compact);
         FormHost.Content = form;
         form.StateChanged += () => { StartButton.Content = form.ActionText; StartButton.IsEnabled = !form.IsBusy; };
         form.LayoutChanged += () => LayoutChanged?.Invoke();
@@ -27,4 +27,6 @@ public sealed partial class DownloadConfirmationPage : Page
         else Cancelled?.Invoke();
     }
     private void Cancel(object sender, RoutedEventArgs e) => Cancelled?.Invoke();
+    private void CancelShortcut(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args) { Cancelled?.Invoke(); args.Handled = true; }
+    private void StartShortcut(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args) { if (StartButton.IsEnabled) Start(sender,new()); args.Handled = true; }
 }

@@ -38,8 +38,7 @@ public sealed class DownloadProgressPage : Page
     public DownloadProgressPage(CoreClient core, string id, Action close)
     {
         this.core = core; this.id = id; this.close = close;
-        var muted = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
-        foreach (var text in new[] { kind, status, transfer, remaining, folder }) text.Foreground = muted;
+        foreach (var text in new[] { kind, status, transfer, remaining, folder }) text.Style = (Style)Application.Current.Resources["SecondaryTextBlockStyle"];
         name.DragStarting += DragFile; ToolTipService.SetToolTip(name, "下載完成後可拖曳檔案");
         primary.IsEnabled = false; closeAfterOpen.IsChecked = UiPreferences.Load().CloseProgressAfterOpen;
         closeAfterOpen.Checked += SaveClosePreference; closeAfterOpen.Unchecked += SaveClosePreference;
@@ -55,7 +54,7 @@ public sealed class DownloadProgressPage : Page
         var dismiss = new Button { Content = "關閉" }; dismiss.Click += (_, _) => close(); buttons.Children.Add(dismiss);
         var extras = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { sourceButton, closeAfterOpen } };
         var footer = new Grid { ColumnSpacing = 8 }; footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1,GridUnitType.Star) }); footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); footer.Children.Add(extras); Grid.SetColumn(buttons,1); footer.Children.Add(buttons);
-        var footerBorder = new Border { BorderThickness = new Thickness(0,1,0,0), BorderBrush = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["DividerStrokeColorDefaultBrush"], Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["LayerFillColorDefaultBrush"], Padding = new Thickness(20,12,20,12), Child = footer };
+        var footerBorder = new Border { Style = (Style)Application.Current.Resources["DownloadFooterStyle"], Child = footer };
         var layout = new Grid(); layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1,GridUnitType.Star) }); layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); layout.Children.Add(new ScrollViewer { Content = body, HorizontalScrollMode = ScrollMode.Disabled, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }); Grid.SetRow(footerBorder,1); layout.Children.Add(footerBorder); Content = layout;
         primary.Click += async (_, _) => await PrimaryAction();
         browse.Click += (_, _) => { try { if (item is not null) FileActions.Reveal(item.FilePath,item.Folder); } catch (Exception failure) { ShowError(failure); } };

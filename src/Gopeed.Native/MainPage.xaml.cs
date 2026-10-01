@@ -16,7 +16,6 @@ public sealed partial class MainPage : Page
  private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(1) };
  private bool refreshing;
  private readonly TaskCompletionSource ready = new();
- private readonly SemaphoreSlim addDialogGate = new(1);
  public MainPage()
  {
   InitializeComponent(); Loaded += Start;
@@ -34,9 +33,7 @@ public sealed partial class MainPage : Page
  {
   await ready.Task;
   if (!ViewModel.IsConnected) return;
-  await addDialogGate.WaitAsync(); timer.Stop();
-  try { await NativeDialogs.ShowAsync(new AddDownloadDialog(ViewModel.Core, parameters), XamlRoot); await ViewModel.RefreshAsync(); }
-  catch (Exception error) { ViewModel.Error = UserError.Message(error); } finally { timer.Start(); addDialogGate.Release(); }
+  ((App)Application.Current).OpenDownloadWindow(parameters ?? new System.Text.Json.Nodes.JsonObject(), compact: false);
  }
  public async void OpenProtocol(string value)
  {
@@ -50,7 +47,7 @@ public sealed partial class MainPage : Page
    else
    {
     ShowDownloads(this, new());
-    if (link.Route == "create") new DownloadWindow(link.Parameters ?? new System.Text.Json.Nodes.JsonObject()).Activate();
+    if (link.Route == "create") ((App)Application.Current).OpenDownloadWindow(link.Parameters ?? new System.Text.Json.Nodes.JsonObject());
    }
   }
   catch (Exception error) { ViewModel.Error = $"無法開啟 Gopeed 連結：{error.Message}"; }
@@ -62,16 +59,7 @@ public sealed partial class MainPage : Page
  private async void PauseAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("pause", ViewModel.AllItems.Where(i => i.CanPause));
  private async void ResumeAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("continue", ViewModel.AllItems.Where(i => i.CanResume));
  private async void RefreshClicked(object s, RoutedEventArgs e) => await ViewModel.RefreshAsync();
- private async void PrimarySelected(object s, RoutedEventArgs e)
- {
-  var action = ViewModel.PrimaryActionKey;
-  if (action == "open") OpenSelected(s, e);
-  else if (action == "folder") { foreach (var folder in ViewModel.Selection.Select(x => x.Folder).Distinct()) FileActions.Open(folder); }
-  else if (action == "pause") await ViewModel.ActAsync(action, ViewModel.Selection.Where(x => x.CanPause));
-  else if (action == "continue") await ViewModel.ActAsync(action, ViewModel.Selection.Where(x => x.CanResume));
- }
  private void OpenSelected(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { IsComplete: true } item) FileActions.Open(item.OpenPath); } catch (Exception ex) { ViewModel.Error = UserError.Message(ex); } }
- private void OpenFolder(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = UserError.Message(ex); } }
  private void CopySelected(object s, RoutedEventArgs e) => FileActions.Copy(string.Join("\n", ViewModel.Selection.Select(x => x.Url)));
  private async void PasteDownload(object s, RoutedEventArgs e)
  {
