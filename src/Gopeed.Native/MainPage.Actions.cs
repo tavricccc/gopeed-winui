@@ -14,8 +14,9 @@ public sealed partial class MainPage
     private void DownloadSelectionChanged(object sender, SelectionChangedEventArgs args) => ViewModel.SetSelection(DownloadList.SelectedItems.Cast<DownloadItem>());
     private void SortChanged(object sender, SelectionChangedEventArgs args) { if (((ComboBox)sender).SelectedItem is ComboBoxItem item) { ViewModel.Sort = item.Tag.ToString()!; ViewModel.ApplyFilter(); } }
     private void SelectAll(object sender, RoutedEventArgs args) => DownloadList.SelectAll();
-    private void SelectAllShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { if (DownloadList.FocusState != FocusState.Unfocused) { DownloadList.SelectAll(); args.Handled = true; } }
-    private async void DeleteShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { if (DownloadList.FocusState != FocusState.Unfocused && ViewModel.HasSelection) { args.Handled = true; await DeleteItemsAsync(ViewModel.Selection); } }
+    private bool ListHasFocus() { var current = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(XamlRoot) as DependencyObject; while (current is not null) { if (current == DownloadList) return true; current = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(current); } return false; }
+    private void SelectAllShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { if (ListHasFocus()) { DownloadList.SelectAll(); args.Handled = true; } }
+    private async void DeleteShortcut(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args) { if (ListHasFocus() && ViewModel.HasSelection) { args.Handled = true; await DeleteItemsAsync(ViewModel.Selection); } }
     private async Task DeleteItemsAsync(IEnumerable<DownloadItem> items)
     {
         var targets = items.ToList(); if (targets.Count == 0) return;
@@ -31,7 +32,7 @@ public sealed partial class MainPage
     }
     private async void ClearCompleted(object sender, RoutedEventArgs args)
     {
-        var targets = ViewModel.VisibleItems.Where(x => x.IsComplete && !x.Uploading && !x.IsProcessing).ToList(); if (targets.Count == 0) return;
+        var targets = ViewModel.AllItems.Where(x => x.IsComplete && !x.Uploading && !x.IsProcessing).ToList(); if (targets.Count == 0) return;
         var dialog = new ContentDialog { Title = $"清除 {targets.Count} 個完成紀錄？", Content = "已下載的檔案會保留。", PrimaryButtonText = "清除紀錄", CloseButtonText = "取消" };
         if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) await ViewModel.ActAsync("delete", targets);
     }
@@ -49,7 +50,8 @@ public sealed partial class MainPage
         var request = item.Data["meta"]!["req"]!.DeepClone().AsObject();
         if (request["extra"]?["header"] is JsonObject values) headers.Text = string.Join("\n", values.Select(x => $"{x.Key}: {x.Value}"));
         var resume = new CheckBox { Content = "更新後繼續下載", IsChecked = true };
-        var panel = new StackPanel { Spacing = 12, Children = { source, headers, resume } };
+        var message = new InfoBar { Severity = InfoBarSeverity.Error };
+        var panel = new StackPanel { Spacing = 12, Children = { message, source, headers, resume } };
         var dialog = new ContentDialog { Title = "修改下載來源", Content = panel, PrimaryButtonText = "更新", CloseButtonText = "取消" };
         dialog.PrimaryButtonClick += async (_, click) =>
         {
@@ -61,7 +63,7 @@ public sealed partial class MainPage
                 await ViewModel.Core.SendAsync(HttpMethod.Patch, "tasks/" + item.Id, new JsonObject { ["req"] = request.DeepClone() });
                 if (resume.IsChecked == true) await ViewModel.Core.SendAsync(HttpMethod.Put, "tasks/" + item.Id + "/continue");
             }
-            catch (Exception error) { click.Cancel = true; ViewModel.Error = UserError.Message(error); }
+            catch (Exception error) { click.Cancel = true; message.Message = UserError.Message(error); message.IsOpen = true; }
             finally { deferral.Complete(); }
         };
         await NativeDialogs.ShowAsync(dialog, XamlRoot); await ViewModel.RefreshAsync();

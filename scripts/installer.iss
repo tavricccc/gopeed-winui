@@ -46,9 +46,37 @@ Filename: "{app}\Engine\gopeed-core.exe"; Parameters: "--data ""{localappdata}\G
 
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;
-var Code: Integer;
+var Code: Integer; Command, Description, Icon: String;
 begin
+  if not RegKeyExists(HKCU, 'Software\GopeedNative\ProtocolBackup') and
+    RegQueryStringValue(HKCU, 'Software\Classes\gopeed\shell\open\command', '', Command) and
+    (Pos('Gopeed.Native.exe', Command) = 0) then
+  begin
+    RegWriteStringValue(HKCU, 'Software\GopeedNative\ProtocolBackup', 'Command', Command);
+    if RegQueryStringValue(HKCU, 'Software\Classes\gopeed', '', Description) then
+      RegWriteStringValue(HKCU, 'Software\GopeedNative\ProtocolBackup', 'Description', Description);
+    if RegQueryStringValue(HKCU, 'Software\Classes\gopeed\DefaultIcon', '', Icon) then
+      RegWriteStringValue(HKCU, 'Software\GopeedNative\ProtocolBackup', 'Icon', Icon);
+  end;
   if FileExists(ExpandConstant('{app}\Engine\gopeed-core.exe')) then
     Exec(ExpandConstant('{app}\Engine\gopeed-core.exe'), '--data "' + ExpandConstant('{localappdata}\GopeedNative') + '" --shutdown', '', SW_HIDE, ewWaitUntilTerminated, Code);
   Result := '';
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var Command, Description, Icon: String;
+begin
+  if CurUninstallStep = usPostUninstall then
+  begin
+    if RegQueryStringValue(HKCU, 'Software\GopeedNative\ProtocolBackup', 'Command', Command) then
+    begin
+      RegWriteStringValue(HKCU, 'Software\Classes\gopeed', 'URL Protocol', '');
+      RegWriteStringValue(HKCU, 'Software\Classes\gopeed\shell\open\command', '', Command);
+      if RegQueryStringValue(HKCU, 'Software\GopeedNative\ProtocolBackup', 'Description', Description) then
+        RegWriteStringValue(HKCU, 'Software\Classes\gopeed', '', Description);
+      if RegQueryStringValue(HKCU, 'Software\GopeedNative\ProtocolBackup', 'Icon', Icon) then
+        RegWriteStringValue(HKCU, 'Software\Classes\gopeed\DefaultIcon', '', Icon);
+      RegDeleteKeyIncludingSubkeys(HKCU, 'Software\GopeedNative\ProtocolBackup');
+    end;
+  end;
 end;

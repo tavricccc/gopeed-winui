@@ -8,7 +8,7 @@ try {
     if ($LASTEXITCODE) { throw 'Go core build failed' }
     go build -trimpath -ldflags '-s -w -H=windowsgui' -o gopeed-browser-host.exe ./cmd/browser-host
     if ($LASTEXITCODE) { throw 'Browser host build failed' }
-    if ($Test) { go test .; if ($LASTEXITCODE) { throw 'Core verification failed' } }
+    if ($Test) { go test ./...; if ($LASTEXITCODE) { throw 'Core verification failed' } }
 } finally { Pop-Location }
 if ($Test) {
     dotnet run --project (Join-Path $repo 'tests/Gopeed.ProtocolChecks/ProtocolCheck.csproj')

@@ -32,7 +32,7 @@ public sealed partial class MainPage : Page
   ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Selected)) { SelectionDetails.Visibility = ViewModel.HasSingleSelection ? Visibility.Visible : Visibility.Collapsed; DetailsHint.Visibility = ViewModel.HasSingleSelection ? Visibility.Collapsed : Visibility.Visible; } };
   timer.Tick += async (_, _) => { if (refreshing || !ViewModel.IsConnected) return; refreshing = true; await ViewModel.RefreshAsync(); refreshing = false; };
  }
- private async void Start(object sender, RoutedEventArgs e) { Loaded -= Start; await ViewModel.InitializeAsync(); timer.Start(); ready.SetResult(); }
+ private async void Start(object sender, RoutedEventArgs e) { Loaded -= Start; await ViewModel.InitializeAsync(); timer.Start(); ready.SetResult(); if (ViewModel.IsConnected && UiPreferences.Load().CheckForUpdates) { try { var update = await UpdateService.CheckAsync(ViewModel.Core); if (update is not null) { ErrorBar.Severity = InfoBarSeverity.Informational; ErrorBar.Message = $"有新版本：{update.Version}"; var button = new Button { Content = "下載更新" }; button.Click += async (_, _) => await UpdateService.PromptAsync(ViewModel.Core, update, XamlRoot); ErrorBar.ActionButton = button; ErrorBar.IsOpen = true; } } catch (Exception) { /* A background update check must not interrupt downloads. Manual checks report errors. */ } } }
  private async void AddDownload(object sender, RoutedEventArgs e)
  {
   await AddDownloadAsync(null);
@@ -43,7 +43,7 @@ public sealed partial class MainPage : Page
   if (!ViewModel.IsConnected) return;
   await addDialogGate.WaitAsync(); timer.Stop();
   try { await NativeDialogs.ShowAsync(new AddDownloadDialog(ViewModel.Core, parameters), XamlRoot); await ViewModel.RefreshAsync(); }
-  catch (Exception error) { ViewModel.Error = error.Message; } finally { timer.Start(); addDialogGate.Release(); }
+  catch (Exception error) { ViewModel.Error = UserError.Message(error); } finally { timer.Start(); addDialogGate.Release(); }
  }
  public async void OpenProtocol(string value)
  {
@@ -67,8 +67,8 @@ public sealed partial class MainPage : Page
  private void SearchChanged(AutoSuggestBox s, AutoSuggestBoxTextChangedEventArgs e) { ViewModel.Search = s.Text; ViewModel.ApplyFilter(); }
  private async void PauseSelected(object s, RoutedEventArgs e) => await ViewModel.ActAsync("pause", ViewModel.Selection.Where(x => x.CanPause));
  private async void ResumeSelected(object s, RoutedEventArgs e) => await ViewModel.ActAsync("continue", ViewModel.Selection.Where(x => x.CanResume));
- private async void PauseAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("pause", ViewModel.VisibleItems.Where(i => i.CanPause));
- private async void ResumeAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("continue", ViewModel.VisibleItems.Where(i => i.CanResume));
+ private async void PauseAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("pause", ViewModel.AllItems.Where(i => i.CanPause));
+ private async void ResumeAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("continue", ViewModel.AllItems.Where(i => i.CanResume));
  private async void RefreshClicked(object s, RoutedEventArgs e) => await ViewModel.RefreshAsync();
  private async void PrimarySelected(object s, RoutedEventArgs e)
  {
@@ -78,13 +78,13 @@ public sealed partial class MainPage : Page
   else if (action == "pause") await ViewModel.ActAsync(action, ViewModel.Selection.Where(x => x.CanPause));
   else if (action == "continue") await ViewModel.ActAsync(action, ViewModel.Selection.Where(x => x.CanResume));
  }
- private void OpenSelected(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { IsComplete: true } item) FileActions.Open(item.FilePath); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
- private void OpenFolder(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
+ private void OpenSelected(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { IsComplete: true } item) FileActions.Open(item.OpenPath); } catch (Exception ex) { ViewModel.Error = UserError.Message(ex); } }
+ private void OpenFolder(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = UserError.Message(ex); } }
  private void CopySelected(object s, RoutedEventArgs e) => FileActions.Copy(string.Join("\n", ViewModel.Selection.Select(x => x.Url)));
  private async void PasteDownload(object s, RoutedEventArgs e)
  {
   try { var content = Clipboard.GetContent(); if (!content.Contains(StandardDataFormats.Text)) throw new FormatException("剪貼簿沒有文字連結。"); await AddText(await content.GetTextAsync()); }
-  catch (Exception ex) { ViewModel.Error = ex.Message; }
+  catch (Exception ex) { ViewModel.Error = UserError.Message(ex); }
  }
  private async Task AddText(string text)
  {
@@ -109,10 +109,10 @@ public sealed partial class MainPage : Page
     parameters = new System.Text.Json.Nodes.JsonObject { ["req"] = new System.Text.Json.Nodes.JsonObject { ["url"] = string.Join("\n", files.Select(f => f.Path)) } };
    }
   }
-  catch (Exception ex) { ViewModel.Error = ex.Message; return; }
+  catch (Exception ex) { ViewModel.Error = UserError.Message(ex); return; }
   finally { deferral.Complete(); }
   try { if (parameters is not null) await AddDownloadAsync(parameters); else if (text is not null) await AddText(text); }
-  catch (Exception ex) { ViewModel.Error = ex.Message; }
+  catch (Exception ex) { ViewModel.Error = UserError.Message(ex); }
  }
  private async void DeleteSelected(object s, RoutedEventArgs e) => await DeleteItemsAsync(ViewModel.Selection);
  private async Task DeleteAsync(DownloadItem item)
@@ -129,13 +129,13 @@ public sealed partial class MainPage : Page
  private async void ContextPrimary(object s, RoutedEventArgs e)
  {
   if (ContextItem(s) is not { } item) return;
-  var action = DownloadPresentation.ForStatus(item.Status);
-  if (action.Key == "open") { try { FileActions.Open(item.FilePath); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
+  var action = item.PrimaryAction;
+  if (action.Key == "open") { try { FileActions.Open(item.OpenPath); } catch (Exception ex) { ViewModel.Error = UserError.Message(ex); } }
   else if (action.Key != "none") await ViewModel.ActAsync(action.Key, [item]);
  }
  private async void ContextPause(object s, RoutedEventArgs e) { if (ContextItem(s) is { CanPause: true } item) await ViewModel.ActAsync("pause", [item]); }
  private async void ContextResume(object s, RoutedEventArgs e) { if (ContextItem(s) is { CanResume: true } item) await ViewModel.ActAsync("continue", [item]); }
- private void ContextFolder(object s, RoutedEventArgs e) { try { if (ContextItem(s) is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
+ private void ContextFolder(object s, RoutedEventArgs e) { try { if (ContextItem(s) is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = UserError.Message(ex); } }
  private async void ContextDelete(object s, RoutedEventArgs e) { if (ContextItem(s) is { } item) await DeleteAsync(item); }
  private void NewShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { AddDownload(s, new()); e.Handled = true; }
  private void SearchShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { SearchBox.Focus(FocusState.Keyboard); e.Handled = true; }
@@ -143,6 +143,7 @@ public sealed partial class MainPage : Page
  private void NavigationChanged(NavigationView s, NavigationViewSelectionChangedEventArgs e)
  {
   if (SettingsFrame is null) return;
+  if (!ViewModel.IsConnected && (e.IsSettingsSelected || (e.SelectedItem as NavigationViewItem)?.Tag?.ToString() == "extensions")) { Navigation.SelectedItem = Navigation.MenuItems[0]; return; }
   var downloads = !e.IsSettingsSelected && (e.SelectedItem as NavigationViewItem)?.Tag?.ToString() != "extensions";
   DownloadsSurface.Visibility = downloads ? Visibility.Visible : Visibility.Collapsed;
   SettingsFrame.Visibility = downloads ? Visibility.Collapsed : Visibility.Visible;

@@ -69,20 +69,20 @@ public sealed class DownloadProgressPage : Page
         try
         {
             item = new DownloadItem((await core.GetAsync("tasks/" + id))!.AsObject());
-            var action = DownloadPresentation.ForStatus(item.Status);
+            var action = item.PrimaryAction;
             NativeButtons.SetContent(primary, action.Label, action.Glyph); primary.IsEnabled = action.Key != "none";
-            heading.Text = item.IsComplete ? "下載完成" : item.StatusText;
+            heading.Text = item.IsComplete && !item.IsProcessing && !item.Uploading ? "下載完成" : item.StatusText;
             stateIcon.Glyph = item.IsComplete ? "\uE73E" : item.Status == "error" ? "\uE783" : "\uE896";
             stateIcon.Foreground = (Brush)Application.Current.Resources[item.IsComplete ? "SystemFillColorSuccessBrush" : "TextFillColorSecondaryBrush"];
-            name.Text = item.Name; status.Text = item.IsComplete ? "檔案已儲存，可直接開啟或在資料夾中顯示。" : $"{item.Percent:0.0}% · {item.Protocol}";
-            name.CanDrag = item.IsComplete; dragHint.Visibility = item.IsComplete ? Visibility.Visible : Visibility.Collapsed;
+            name.Text = item.Name; status.Text = item.IsProcessing ? item.ExtractionText : item.ExtractionStatus == "error" ? "解壓縮失敗，原始檔案仍可開啟。" : item.IsComplete ? "檔案已儲存，可直接開啟或在資料夾中顯示。" : $"{item.Percent:0.0}% · {item.Protocol}";
+            name.CanDrag = item.IsComplete && !item.IsProcessing; dragHint.Visibility = name.CanDrag ? Visibility.Visible : Visibility.Collapsed;
             progress.Value = item.Percent; progress.IsIndeterminate = item.IsIndeterminate; progress.Visibility = item.IsComplete ? Visibility.Collapsed : Visibility.Visible;
-            transfer.Text = item.IsComplete ? $"大小：{item.SizeText}" : $"{item.TransferText} · {item.SpeedText} · 剩餘 {item.RemainingText}";
-            folder.Text = item.FilePath; source.Text = item.Url;
+            transfer.Text = item.Uploading ? $"已上傳 {DownloadItem.FormatBytes(item.Uploaded)} · {item.SpeedText}" : item.IsComplete ? $"大小：{item.SizeText}" : $"{item.TransferText} · {item.SpeedText} · 剩餘 {item.RemainingText}";
+            folder.Text = item.OpenPath; source.Text = item.Url;
             closeAfterOpen.Visibility = item.IsComplete ? Visibility.Visible : Visibility.Collapsed;
             NativeButtons.SetContent(browse, item.IsComplete ? "在資料夾中顯示" : "儲存資料夾", "\uE8B7");
             if (lastStatus != item.Status) { details.IsExpanded = item.Status == "error"; lastStatus = item.Status; }
-            if (item.IsComplete) timer.Stop();
+            if (item.IsComplete && !item.IsProcessing && !item.Uploading) timer.Stop();
         }
         catch (Exception e) { ShowError(e); }
         finally { refreshing = false; }
@@ -93,8 +93,8 @@ public sealed class DownloadProgressPage : Page
         primary.IsEnabled = false;
         try
         {
-            var action = DownloadPresentation.ForStatus(item.Status);
-            if (action.Key == "open") { FileActions.Open(item.FilePath); if (closeAfterOpen.IsChecked == true) close(); }
+            var action = item.PrimaryAction;
+            if (action.Key == "open") { FileActions.Open(item.OpenPath); if (closeAfterOpen.IsChecked == true) close(); }
             else if (action.Key != "none") { await core.SendAsync(HttpMethod.Put, $"tasks/{id}/{action.Key}"); await Refresh(); }
         }
         catch (Exception e) { ShowError(e); }
@@ -107,12 +107,12 @@ public sealed class DownloadProgressPage : Page
         var deferral = args.GetDeferral();
         try
         {
-            IStorageItem file = Directory.Exists(item.FilePath) ? await StorageFolder.GetFolderFromPathAsync(item.FilePath) : await StorageFile.GetFileFromPathAsync(item.FilePath);
+            IStorageItem file = Directory.Exists(item.OpenPath) ? await StorageFolder.GetFolderFromPathAsync(item.OpenPath) : await StorageFile.GetFileFromPathAsync(item.OpenPath);
             args.Data.SetStorageItems([file]); args.Data.RequestedOperation = DataPackageOperation.Copy; args.AllowedOperations = DataPackageOperation.Copy;
         }
         catch (Exception error) { args.Cancel = true; ShowError(error); }
         finally { deferral.Complete(); }
     }
     public void Stop() => timer.Stop();
-    private void ShowError(Exception e) { error.Message = e.Message; error.IsOpen = true; }
+    private void ShowError(Exception e) { error.Message = UserError.Message(e); error.IsOpen = true; }
 }

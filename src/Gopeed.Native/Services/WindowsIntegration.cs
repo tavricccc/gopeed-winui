@@ -10,7 +10,7 @@ public static class WindowsIntegration
     private const string HostName = "com.gopeed.gopeed";
     private static string BackupPath => Path.Combine(CoreClient.DataDirectory, "browser-integration-backup.json");
     private static readonly string[] BrowserKeys = [@"Software\Google\Chrome\NativeMessagingHosts", @"Software\Microsoft\Edge\NativeMessagingHosts", @"Software\Mozilla\NativeMessagingHosts"];
-    public static bool StartsWithWindows => Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")?.GetValue("GopeedNative") is not null;
+    public static bool StartsWithWindows { get { using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run"); return key?.GetValue("GopeedNative") is not null; } }
     public static void SetStartup(bool enabled)
     {
         using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");

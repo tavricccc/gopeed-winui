@@ -66,6 +66,11 @@ func main() {
 	if err := os.MkdirAll(*root, 0700); err != nil {
 		panic(err)
 	}
+	release, acquired := acquireCore(*root)
+	if !acquired {
+		return
+	}
+	defer release()
 	tokenPath := filepath.Join(*root, "api-token")
 	tokenBytes, err := os.ReadFile(tokenPath)
 	if os.IsNotExist(err) {

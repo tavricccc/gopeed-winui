@@ -34,11 +34,13 @@ public sealed class DownloadItem : ObservableObject
     public long UploadSpeed => Data["progress"]?["uploadSpeed"]?.GetValue<long>() ?? 0;
     public string SpeedText => Status == "running" ? FormatBytes(Speed) + "/s" : Uploading ? "↑ " + FormatBytes(UploadSpeed) + "/s" : "—";
     public string RemainingText => Status == "running" && Speed > 0 && Size > Downloaded ? FormatTime((Size - Downloaded) / Speed) : "—";
-    public string PrimaryActionLabel => DownloadPresentation.ForStatus(Status).Label;
-    public string PrimaryActionGlyph => DownloadPresentation.ForStatus(Status).Glyph;
+    public string OpenPath => ExtractionStatus == "done" && !File.Exists(FilePath) && !Directory.Exists(FilePath) ? Folder : FilePath;
+    public DownloadAction PrimaryAction => IsProcessing ? new("none", "正在解壓縮", "\uE895") : IsComplete && OpenPath == Folder ? new("open", "開啟解壓縮資料夾", "\uE8B7") : DownloadPresentation.ForStatus(Status);
+    public string PrimaryActionLabel => PrimaryAction.Label;
+    public string PrimaryActionGlyph => PrimaryAction.Glyph;
     public string FileGlyph => Data["meta"]?["res"]?["name"]?.GetValue<string>() is { Length: > 0 } ? "\uE8B7" : DownloadPresentation.FileGlyph(Name);
-    public bool CanEditSource => Protocol == "HTTP" && Status is "pause" or "error";
-    public bool CanAct => DownloadPresentation.ForStatus(Status).Key != "none";
+    public bool CanEditSource => Protocol == "HTTP" && (Status is "pause" or "error");
+    public bool CanAct => PrimaryAction.Key != "none";
     public string FilePath
     {
         get

@@ -37,11 +37,11 @@ public sealed class CoreClient : IDisposable
             var deadline = DateTime.UtcNow.AddSeconds(30);
             while (DateTime.UtcNow < deadline)
             {
-                if (child.HasExited) throw new IOException("下載核心無法啟動。請查看資料夾內的日誌。");
+                if (child.HasExited && child.ExitCode != 0) throw new IOException("無法啟動下載服務。請查看記錄資料夾。");
                 if (File.Exists(path))
                 {
                     var candidate = JsonNode.Parse(await File.ReadAllTextAsync(path))!.AsObject();
-                    if (candidate["pid"]!.GetValue<int>() == child.Id) { session = candidate; break; }
+                    try { using var running = Process.GetProcessById(candidate["pid"]!.GetValue<int>()); if (running.ProcessName == "gopeed-core") { session = candidate; break; } } catch (ArgumentException) { /* The old session remains until the new core publishes its session. */ }
                 }
                 await Task.Delay(100);
             }

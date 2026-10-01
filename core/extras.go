@@ -82,7 +82,7 @@ func updateTrackerSubscriptions(d *download.Downloader, port int, token string) 
 			return err
 		}
 		request.Header.Set("X-Api-Token", token)
-		request.Header.Set("X-Target-Uri", source)
+		request.Header.Set("X-Target-Uri", mirroredURL(source, cfg.Extra))
 		resp, err := client.Do(request)
 		if err != nil {
 			return err
@@ -123,7 +123,9 @@ func updateTrackerSubscriptions(d *download.Downloader, port int, token string) 
 	if bt == nil {
 		bt = map[string]any{}
 	}
-	for _, custom := range subscriptions.Custom {
+	latestCustom, _ := latestBt["customTrackers"].([]any)
+	for _, value := range latestCustom {
+		custom, _ := value.(string)
 		if !seen[custom] {
 			seen[custom] = true
 			trackers = append(trackers, custom)

@@ -115,7 +115,7 @@ public partial class App : Application
         if (Window is null) { Window = new MainWindow(); Window.Closed += (_, _) => { Window = null!; ReleaseRegistration(); }; }
         return (MainWindow)Window;
     }
-    private void OpenDownloadWindow(System.Text.Json.Nodes.JsonObject request)
+    internal void OpenDownloadWindow(System.Text.Json.Nodes.JsonObject request)
     {
         var window = new Views.DownloadWindow(request);
         downloadWindows.Add(window);

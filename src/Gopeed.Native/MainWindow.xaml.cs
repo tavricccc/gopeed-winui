@@ -20,8 +20,9 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
 
         Services.WindowAppearance.SetIcon(this);
-        Closed += (_, _) => Services.ShareFiles.Release(WinRT.Interop.WindowNative.GetWindowHandle(this));
-        var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        Closed += (_, _) => Services.ShareFiles.Release(hwnd);
+        var scale = GetDpiForWindow(hwnd) / 96.0;
         AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(1120 * scale), (int)(740 * scale)));
         if (AppWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
         {

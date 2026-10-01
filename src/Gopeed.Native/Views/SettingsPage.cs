@@ -24,6 +24,7 @@ public sealed partial class SettingsPage : Page
     private TextBox folder = null!;
     private TextBox customTrackers = null!;
     private readonly CategoriesEditor categories = new();
+    private readonly MirrorsEditor mirrors = new();
     private readonly ComboBox proxyMode = new() { Header = "代理模式", Items = { "跟隨系統", "直接連線", "自訂" }, SelectedIndex = 0 };
     public SettingsPage(DownloadsViewModel viewModel)
     {
@@ -65,7 +66,7 @@ public sealed partial class SettingsPage : Page
         Loaded -= Load;
         try
         {
-            var config = (await vm.Core.GetAsync("config"))!.AsObject(); fields.Load(config); categories.Load(config);
+            var config = (await vm.Core.GetAsync("config"))!.AsObject(); fields.Load(config); categories.Load(config); mirrors.Load(config);
             var prefs = UiPreferences.Load(); remember.IsChecked = prefs.RememberDownloadDirectory; closeProgress.IsChecked = prefs.CloseProgressAfterOpen;
             apiPort.Value = prefs.ApiPort; checkUpdates.IsChecked = prefs.CheckForUpdates; startup.IsChecked = WindowsIntegration.StartsWithWindows;
             proxyMode.SelectedIndex = config["proxy"]?["enable"]?.GetValue<bool>() == true ? config["proxy"]?["system"]?.GetValue<bool>() == true ? 0 : 2 : 1;
@@ -80,9 +81,12 @@ public sealed partial class SettingsPage : Page
         {
             if (!Path.IsPathFullyQualified(folder.Text)) throw new FormatException("請選擇完整的下載位置。");
             if (!double.IsFinite(apiPort.Value)) throw new FormatException("請輸入有效的連接埠。");
-            var config = (await vm.Core.GetAsync("config"))!.AsObject(); fields.Save(config); categories.Save(config);
+            var config = (await vm.Core.GetAsync("config"))!.AsObject(); fields.Save(config); categories.Save(config); mirrors.Save(config);
             config["proxy"]!["enable"] = proxyMode.SelectedIndex != 1; config["proxy"]!["system"] = proxyMode.SelectedIndex == 0;
             if (proxyMode.SelectedIndex == 2 && string.IsNullOrWhiteSpace(config["proxy"]?["host"]?.GetValue<string>())) throw new FormatException("請輸入代理伺服器的主機與連接埠。");
+            if (proxyMode.SelectedIndex == 2 && config["proxy"]?["scheme"]?.GetValue<string>() is not ("http" or "https" or "socks5")) throw new FormatException("代理協定請使用 http、https 或 socks5。");
+            if (config["webhook"]?["enable"]?.GetValue<bool>() == true) { var urls = config["webhook"]!["urls"]!.AsArray(); if (urls.Count == 0 || urls.Any(x => !Uri.TryCreate(x!.GetValue<string>(), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))) throw new FormatException("請輸入有效的 Webhook 網址。"); }
+            if (config["script"]?["enable"]?.GetValue<bool>() == true && (config["script"]!["paths"]!.AsArray().Count == 0 || config["script"]!["paths"]!.AsArray().Any(x => !File.Exists(x!.GetValue<string>())))) throw new FormatException("請選擇存在的程式或指令檔。");
             var subscribed = ConfigJson.Get(config, "extra.bt.subscribeTrackers")?.AsArray().Select(x => x!.GetValue<string>()) ?? [];
             ConfigJson.Set(config, "protocolConfig.bt.trackers", ConfigJson.Array(ConfigJson.Lines(customTrackers.Text).Concat(subscribed).Distinct()));
             Directory.CreateDirectory(folder.Text); await vm.Core.SendAsync(HttpMethod.Put, "config", config);

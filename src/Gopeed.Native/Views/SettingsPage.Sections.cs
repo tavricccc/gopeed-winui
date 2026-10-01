@@ -27,7 +27,8 @@ public sealed partial class SettingsPage
             try
             {
                 var trackers = new List<string>();
-                foreach (var url in ConfigJson.Lines(subscriptions.Text)) { if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) throw new FormatException("請輸入有效的 Tracker 訂閱網址。"); trackers.AddRange(ConfigJson.Lines(await vm.Core.FetchTextAsync(url))); }
+                var current = (await vm.Core.GetAsync("config"))!.AsObject(); mirrors.Save(current);
+                foreach (var url in ConfigJson.Lines(subscriptions.Text)) { if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) throw new FormatException("請輸入有效的 Tracker 訂閱網址。"); trackers.AddRange(ConfigJson.Lines(await vm.Core.FetchTextAsync(GitHubMirror.Apply(url, current)))); }
                 var config = (await vm.Core.GetAsync("config"))!.AsObject();
                 ConfigJson.Set(config, "extra.bt.subscribeTrackers", ConfigJson.Array(trackers.Distinct())); ConfigJson.Set(config, "extra.bt.trackerSubscribeUrls", ConfigJson.Array(ConfigJson.Lines(subscriptions.Text)));
                 ConfigJson.Set(config, "extra.bt.lastTrackerUpdateTime", JsonValue.Create(DateTimeOffset.UtcNow.ToString("O")));
@@ -49,6 +50,7 @@ public sealed partial class SettingsPage
     }
     private void BuildNetwork()
     {
+        Section("GitHub 鏡像").Children.Add(mirrors);
         var proxy = Section("代理伺服器"); proxy.Children.Add(proxyMode);
         fields.Text(proxy, "協定", "proxy.scheme", initial: "http"); fields.Text(proxy, "主機與連接埠", "proxy.host");
         fields.Text(proxy, "使用者名稱", "proxy.usr"); fields.Password(proxy, "密碼", "proxy.pwd");
@@ -74,7 +76,7 @@ public sealed partial class SettingsPage
         var panel = Section("關於");
         panel.Children.Add(new TextBlock { Text = $"Gopeed Native {typeof(App).Assembly.GetName().Version?.ToString(3)}", Style = (Style)Application.Current.Resources["SubtitleTextBlockStyle"] });
         panel.Children.Add(checkUpdates);
-        var update = new Button { Content = "檢查更新" }; update.Click += async (_, _) => { update.IsEnabled = false; try { var release = await UpdateService.CheckAsync(vm.Core); Success(release is null ? "已是最新版本。" : $"有新版本：{release.Version}"); if (release is not null) Process.Start(new ProcessStartInfo(release.Url) { UseShellExecute = true }); } catch (Exception error) { Report(error); } finally { update.IsEnabled = true; } }; panel.Children.Add(update);
+        var update = new Button { Content = "檢查更新" }; update.Click += async (_, _) => { update.IsEnabled = false; try { var release = await UpdateService.CheckAsync(vm.Core); if (release is null) Success("已是最新版本。"); else await UpdateService.PromptAsync(vm.Core, release, XamlRoot); } catch (Exception error) { Report(error); } finally { update.IsEnabled = true; } }; panel.Children.Add(update);
         panel.Children.Add(new HyperlinkButton { Content = "專案首頁", NavigateUri = new Uri("https://github.com/tavricccc/gopeed-winui") });
         panel.Children.Add(new HyperlinkButton { Content = "授權與致謝", NavigateUri = new Uri("https://github.com/tavricccc/gopeed-winui/blob/winui-native/LICENSE") });
         var logs = new Button { Content = "開啟記錄資料夾" }; logs.Click += (_, _) => FileActions.Open(CoreClient.DataDirectory); panel.Children.Add(logs);

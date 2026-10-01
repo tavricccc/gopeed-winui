@@ -29,6 +29,8 @@ internal sealed class DownloadOptionsPanel : StackPanel
         method.SelectionChanged += (_, _) => RequestChanged?.Invoke(); method.TextSubmitted += (_, _) => RequestChanged?.Invoke();
         body.TextChanged += (_, _) => RequestChanged?.Invoke(); trackers.TextChanged += (_, _) => RequestChanged?.Invoke();
         proxyMode.SelectionChanged += (_, _) => { var custom = proxyMode.SelectedIndex == 2; foreach (var field in new Control[] { scheme, host, user, password }) field.IsEnabled = custom; RequestChanged?.Invoke(); };
+        foreach (var field in new Control[] { scheme, host, user, password }) field.IsEnabled = false;
+        host.TextChanged += (_, _) => RequestChanged?.Invoke(); user.TextChanged += (_, _) => RequestChanged?.Invoke(); password.PasswordChanged += (_, _) => RequestChanged?.Invoke(); scheme.SelectionChanged += (_, _) => RequestChanged?.Invoke();
         skipCert.Checked += (_, _) => RequestChanged?.Invoke(); skipCert.Unchecked += (_, _) => RequestChanged?.Invoke();
     }
     private static ComboBox Choice(string title) => new() { Header = title, Items = { "使用預設值", "啟用", "停用" }, SelectedIndex = 0 };

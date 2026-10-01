@@ -171,10 +171,10 @@ func handle(m message) (any, error) {
 	}
 	query := route.Query()
 	for key, value := range params.Query {
-		query.Set(key, fmt.Sprint(value))
+		addQuery(query, key, value)
 	}
 	for key, value := range params.QueryParameters {
-		query.Set(key, fmt.Sprint(value))
+		addQuery(query, key, value)
 	}
 	route.RawQuery = query.Encode()
 	path := route.String()
@@ -192,6 +192,16 @@ func handle(m message) (any, error) {
 		return nil, err
 	}
 	return json.RawMessage(payload), nil
+}
+func addQuery(query url.Values, key string, value any) {
+	query.Del(key)
+	if list, ok := value.([]any); ok {
+		for _, item := range list {
+			query.Add(key, fmt.Sprint(item))
+		}
+	} else {
+		query.Set(key, fmt.Sprint(value))
+	}
 }
 func main() {
 	for {
