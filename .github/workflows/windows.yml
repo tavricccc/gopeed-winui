@@ -31,10 +31,12 @@ jobs:
           if ($LASTEXITCODE) { throw 'Inno Setup installation failed' }
           $env:PATH += ';C:\Program Files (x86)\Inno Setup 6'
           ./scripts/package.ps1 -SkipBuild
+          ./scripts/source.ps1
       - uses: actions/upload-artifact@v7.0.1
         with:
           name: GopeedNative-windows-x64
           path: |
             artifacts/GopeedNative-Portable-0.3.0-x64.zip
             artifacts/GopeedNative-Setup-0.3.0-x64.exe
+            artifacts/GopeedNative-Source-0.3.0.zip
           compression-level: 0

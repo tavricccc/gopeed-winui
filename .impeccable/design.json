@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-30T19:49:22Z",
+  "generatedAt": "2026-10-01T02:02:16Z",
   "title": "Design System: Gopeed Native",
   "extensions": {
     "platform": "Windows desktop / WinUI 3",
-    "documentedVersion": "0.2.0",
+    "documentedVersion": "0.3.0",
     "units": "DIP；視窗建立時依 DPI 轉換為像素。",
     "sourceOfTruth": [
       "src/Gopeed.Native/App.xaml",
@@ -12,8 +12,15 @@
       "src/Gopeed.Native/MainWindow.xaml.cs",
       "src/Gopeed.Native/MainPage.xaml",
       "src/Gopeed.Native/MainPage.xaml.cs",
+      "src/Gopeed.Native/MainPage.Actions.cs",
+      "src/Gopeed.Native/ViewModels/DownloadsViewModel.cs",
+      "src/Gopeed.Native/Models/DownloadItem.cs",
       "src/Gopeed.Native/Views/SettingsPage.cs",
       "src/Gopeed.Native/Views/ExtensionsPage.cs",
+      "src/Gopeed.Native/Views/ExtensionsPage.Installed.cs",
+      "src/Gopeed.Native/Views/SettingsPage.Sections.cs",
+      "src/Gopeed.Native/Views/DownloadOptionsPanel.cs",
+      "src/Gopeed.Native/Views/TaskDetailsDialog.cs",
       "src/Gopeed.Native/Views/AddDownloadDialog.xaml",
       "src/Gopeed.Native/Views/AddDownloadDialog.xaml.cs",
       "src/Gopeed.Native/Views/DownloadForm.xaml",
@@ -64,11 +71,17 @@
       { "name": "頂部導覽", "kind": "nav", "source": "MainPage.xaml", "control": "NavigationView", "description": "PaneDisplayMode Top；下載、擴充功能及內建設定入口；平台處理選取指示與 overflow。" },
       { "name": "命令列", "kind": "custom", "source": "MainPage.xaml", "control": "CommandBar + AppBarButton", "description": "依下載選取與狀態啟用命令，次要操作置於 overflow；DefaultLabelPosition Right。" },
       { "name": "新增下載", "kind": "custom", "source": "Views/AddDownloadDialog.xaml", "control": "ContentDialog", "description": "單一連結檢查再開始；批次顯示數量；InfoBar 回報錯誤，忙碌時 ProgressRing 及停用主按鈕。" },
-      { "name": "移除下載", "kind": "custom", "source": "MainPage.xaml.cs", "control": "ContentDialog + CheckBox", "description": "預設取消；刪除實體檔案預設未勾選；使用 NativeDialogs 同步實際主題。" },
+      { "name": "移除下載", "kind": "custom", "source": "MainPage.Actions.cs", "control": "ContentDialog + CheckBox", "description": "批次數量、最多五個名稱與未完成／做種停止提醒；預設取消，是否刪檔沿用偏好。清除完成紀錄保留檔案並排除做種／解壓中的任務。" },
       { "name": "瀏覽器下載確認視窗", "kind": "custom", "source": "Views/DownloadWindow.cs / Views/DownloadConfirmationPage.xaml / Views/DownloadForm.xaml", "control": "Window + Page + UserControl", "description": "640×540 DIP 獨立視窗；頁面直接填滿，統一背景、24 DIP 外距、20 DIP 區段距、底部按鈕靠右。單行來源、可編輯檔名／位置、解析大小；確認前不建立任務，取消關閉視窗。" },
-      { "name": "下載進度視窗", "kind": "custom", "source": "Views/DownloadProgressPage.cs", "control": "Window + ProgressBar + TextBlock + Button + CheckBox + Expander", "description": "保留確認窗寬度，高度改為 480 DIP，最小 540×400 DIP。第一個 accent 動作：進行中暫停、暫停繼續、失敗重試、完成開啟。完成顯示勾號、大小、位置，隱藏進度條並停止輪詢；完成檔名可 Copy 拖出，來源可複製。開啟成功後依偏好關閉；關閉仍背景下載。" },
+      { "name": "下載進度視窗", "kind": "custom", "source": "Views/DownloadProgressPage.cs / Models/DownloadItem.cs", "control": "Window + ProgressBar + TextBlock + Button + CheckBox + Expander", "description": "保留確認窗寬度、高度 480 DIP、最小 540×400 DIP。解壓處理時主動作停用並顯示進度，等待分卷用 indeterminate；做種持續顯示上傳量與速度及停止做種。只有 done 且不在解壓處理、不做種才停止一秒輪詢。解壓成功且原檔已刪時主動作開啟解壓縮資料夾；失敗保留原檔。" },
       { "name": "狀態主動作", "kind": "button", "source": "Services/DownloadPresentation.cs / Views/NativeButtons.cs / MainPage.xaml", "control": "Button + FontIcon + TextBlock", "description": "主清單與進度窗共用狀態映射；完成時第一個 accent 按鈕是開啟檔案。FontIcon 16 DIP、間距 8 DIP，NativeButtons 同步 AutomationProperties.Name。" },
-      { "name": "檔案類型圖示", "kind": "custom", "source": "Services/DownloadPresentation.cs / MainPage.xaml", "control": "FontIcon", "description": "清單 24 DIP，以副檔名分壓縮檔、安裝檔、音訊、影片、圖片與一般文件；平台字型圖示，非 Shell 縮圖。" }
+      { "name": "檔案類型圖示", "kind": "custom", "source": "Services/DownloadPresentation.cs / MainPage.xaml", "control": "FontIcon", "description": "清單 24 DIP，以副檔名分壓縮檔、安裝檔、音訊、影片、圖片與一般文件，多檔案資源顯示資料夾；平台字型圖示，非 Shell 縮圖。" },
+      { "name": "多選與排序", "kind": "custom", "source": "MainPage.xaml / ViewModels/DownloadsViewModel.cs", "control": "ListView Extended + ComboBox", "description": "Extended 多選、Ctrl+A／Delete 限清單焦點；選取批次暫停／續傳／移除／複製，需單選的詳情與來源命令停用。排序為最新／最舊／檔名／大小／進度；篩選與排序最小寬132 DIP、搜尋240 DIP。" },
+      { "name": "進階下載選項", "kind": "custom", "source": "Views/DownloadForm.xaml / Views/DownloadOptionsPanel.cs", "control": "Expander + ComboBox + NumberBox + TextBox + PasswordBox + CheckBox", "description": "分類、最近連結、直接開始、檔案全選；進階選項含 HTTP 方法／內容／標頭、憑證、連線數、Tracker、代理、Torrent、解壓與密碼。自訂代理才啟用認證欄位。" },
+      { "name": "設定分區", "kind": "custom", "source": "Views/SettingsPage.cs / Views/SettingsPage.Sections.cs", "control": "Expander + ScrollViewer + native fields", "description": "最大760 DIP，分區間16 DIP、內部12 DIP；一般預設展開，其他分區收合；底列儲存保持可達。一般／分類／壓縮檔與Torrent／HTTP／BT／eD2k／鏡像／代理／接管／完成動作／關於。" },
+      { "name": "擴充商店與已安裝", "kind": "custom", "source": "Views/ExtensionsPage.cs / Views/ExtensionsPage.Installed.cs", "control": "Pivot + Expander + native fields", "description": "最大800 DIP、間距16 DIP。商店搜尋、收藏／安裝／更新排序、分頁載入；其他來源安裝Expander。已安裝有啟用、設定、檢查更新、解除安裝；錯誤InfoBar與重新載入入口。" },
+      { "name": "任務詳情", "kind": "custom", "source": "Views/TaskDetailsDialog.cs", "control": "ContentDialog + Pivot + ListView", "description": "資訊／檔案／連線，最高440 DIP、最小寬420 DIP；檔案選取提供開啟、定位、Windows分享。開啟與分享需完成、不在解壓且檔案存在，連線顯示HTTP進度或BT統計。" },
+      { "name": "來源更新", "kind": "custom", "source": "MainPage.Actions.cs", "control": "ContentDialog + TextBox + CheckBox + InfoBar", "description": "HTTP暫停／失敗任務可更新URL與標頭，預設更新後繼續；也可等待下次瀏覽器連結，明示等待與取消。保留原任務ID與bytes，重新下載另開新增表單。" }
     ],
     "previewPolicy": "原生 WinUI 3 為設計權威。components 保留為空，不建立 HTML/CSS 仿製控制項；nativeComponents 記錄實際原生元件。沒有為固定圖示色生成未實作的 tonal ramp。",
     "assetProvenance": [
@@ -76,14 +89,16 @@
       { "source": "Microsoft.WindowsAppSDK.WinUI.CSharp.Templates", "scaffold": "winapp 0.7.0 new --name Gopeed.Native --template winui-mvvm --template-version latest --use-defaults", "assets": ["SplashScreen.scale-200.png", "Wide310x150Logo.scale-200.png"], "usage": "官方範本素材；保留為 Content，目前 unpackaged 介面未使用。" },
       { "source": "Microsoft.WindowsAppSDK.WinUI runtime", "assets": ["Microsoft.UI.Xaml/Assets/NoiseAsset_256x256_PNG.png"], "usage": "Mica 平台材質，隨 runtime 打包。" }
     ],
-    "reviewEvidence": ["docs/images/native-main.png", "docs/verification-0.2.0.md"],
+    "reviewEvidence": ["docs/images/native-main.png", "docs/images/native-confirmation-0.3.0.png", "docs/images/native-completed-0.3.0.png", "docs/images/native-settings-0.3.0.png", "docs/images/native-store-0.3.0.png", "docs/images/native-extracted-0.3.0.png"],
+    "pendingEvidence": [],
     "previousVersionEvidence": [".impeccable/review/desktop.png", ".impeccable/review/dark.png", ".impeccable/review/compact.png", ".impeccable/review/settings.png", ".impeccable/review/extensions.png", ".impeccable/review/add-dialog.png", ".impeccable/review/delete-dialog.png"],
     "preferences": { "source": "Services/UiPreferences.cs", "storage": "preferences.json", "rememberDirectory": "預設開啟；成功建立後保存最後位置，表單載入優先於核心預設，外部明確指定位置再覆蓋。", "closeAfterOpen": "預設開啟，完成才顯示；按開啟成功後關閉，不是完成即自動關閉。" },
     "inputFlows": { "clipboard": "主清單文字連結開啟新增表單；HTTP、HTTPS、magnet、file 絕對 URI。", "drop": "WebLink／文字連結或 torrent StorageItems 開啟新增表單；一般檔案不接受。", "activation": "create protocol／pending download request 直接開獨立確認窗；一般啟動及 extension 路由仍開主窗，錯誤也在主窗回報。", "icons": "WindowAppearance.SetIcon 在主窗與下載窗載入部署目錄 Assets/AppIcon.ico。" },
     "lifetime": { "source": "App.xaml.cs", "revision": "5fee56b", "description": "保留下載視窗強引用，Closed 後移除；主窗與所有下載窗皆關閉時才解除單一實例 key，避免關閉期間的請求交接遺失。" },
-    "finishReview": { "verdict": "ship", "scope": "實作來源、有效主窗截圖與 UIA／API 證據；不是全面像素或跨應用程式驗證。", "record": "docs/verification-0.2.0.md" },
-    "behaviorEvidence": ["HTTP 入口只開確認窗，確認與取消前 API 任務數不變；開始後同窗轉進度及完成。", "UIA 確認完成窗第一個開啟檔案與第二個在資料夾中顯示可見且啟用；觸發開啟並勾選關閉選項後進度窗關閉。", "ZIP 與文字 loopback 測試檔 SHA-256 與來源一致。", "Explorer 定位實測於 release-demo 資料夾選取 Gopeed UI 驗證.zip，包含空白及中文檔名。", "C# 檢查狀態映射：完成 Open／暫停 Resume／錯誤 Retry／下載中 Pause；核心測試暫停、重啟、續傳。"],
-    "verificationLimits": ["有效主清單截圖確認圖示、未選取按鈕及版面。", "新完成／確認 WGC 白色圖與其他空白圖不採為證據，後續工具無法使視窗到前景；完成與確認沒有像素驗證。", "外部檔案 handler 內容載入、跨應用程式拖放、Narrator、高對比未驗證。", "Windows 10、BT/eD2k 真實網路及第三方擴充功能未完成端到端驗證。", "未宣稱 RAM 節省；沒有性能推估。", "SDK 基準與來源資源優先於截圖取色。"]
+    "finishReview": { "status": "0.3.0 verified Windows release", "scope": "原生來源審查、有效圖、確認與下載、啟動續傳、設定、擴充管理與解除安裝／重新安裝；跨環境限制見交付紀錄。", "record": "docs/verification-0.3.0.md" },
+    "previousFinishReview": { "version": "0.2.0", "verdict": "ship", "record": "docs/verification-0.2.0.md", "scope": "前版結論，不移作0.3.0整體驗證。" },
+    "behaviorEvidence": ["官方native host base64 create到確認窗；取消不建立任務。", "ZIP開始與解壓後hash驗證。", "HTTP來源更新保留同一任務ID與已下載bytes。", "UIA NumberBox輸入Enter提交後API config.maxRunning=256。", "本機測試extension普通複製、設定與停用。", "啟動自動續傳、每日Tracker更新、Webhook已測。"],
+    "verificationLimits": ["設定、商店與解壓完成圖來自同版較早建置，最後建置另驗證主窗、確認及完成；不宣稱每個狀態與尺寸都經像素核對。", "舊版ship與空白圖不當新版證據。", "真實BT／eD2k、第三方網站、Windows分享目標、Narrator、高對比、跨App拖出、Windows10未測。", "外部檔案handler內容載入未確認。", "未宣稱RAM節省；SDK資源優先於截圖取色。"]
   },
   "components": [],
   "narrative": {

@@ -68,6 +68,7 @@ git clone --branch winui-native --recurse-submodules https://github.com/tavriccc
 cd gopeed-winui
 pwsh -File scripts/build.ps1 -Test
 pwsh -File scripts/package.ps1
+pwsh -File scripts/source.ps1
 ```
 
 已取得的 checkout 可執行 `git submodule update --init --recursive`。建置產物位於 `artifacts/`。重新建置之前先關閉從該產物執行的前端與核心，避免檔案鎖定。
