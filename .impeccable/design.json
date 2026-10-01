@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-01T02:02:16Z",
+  "generatedAt": "2026-10-01T03:04:07Z",
   "title": "Design System: Gopeed Native",
   "extensions": {
     "platform": "Windows desktop / WinUI 3",
-    "documentedVersion": "0.3.0",
+    "documentedVersion": "0.4.0",
     "units": "DIP；視窗建立時依 DPI 轉換為像素。",
     "sourceOfTruth": [
       "src/Gopeed.Native/App.xaml",
@@ -12,6 +12,7 @@
       "src/Gopeed.Native/MainWindow.xaml.cs",
       "src/Gopeed.Native/MainPage.xaml",
       "src/Gopeed.Native/MainPage.xaml.cs",
+      "src/Gopeed.Native/MainPage.Rows.cs",
       "src/Gopeed.Native/MainPage.Actions.cs",
       "src/Gopeed.Native/ViewModels/DownloadsViewModel.cs",
       "src/Gopeed.Native/Models/DownloadItem.cs",
@@ -21,11 +22,10 @@
       "src/Gopeed.Native/Views/SettingsPage.Sections.cs",
       "src/Gopeed.Native/Views/DownloadOptionsPanel.cs",
       "src/Gopeed.Native/Views/TaskDetailsDialog.cs",
-      "src/Gopeed.Native/Views/AddDownloadDialog.xaml",
-      "src/Gopeed.Native/Views/AddDownloadDialog.xaml.cs",
       "src/Gopeed.Native/Views/DownloadForm.xaml",
       "src/Gopeed.Native/Views/DownloadForm.xaml.cs",
       "src/Gopeed.Native/Views/DownloadConfirmationPage.xaml",
+      "src/Gopeed.Native/Views/DownloadConfirmationPage.xaml.cs",
       "src/Gopeed.Native/Views/DownloadWindow.cs",
       "src/Gopeed.Native/Views/DownloadProgressPage.cs",
       "src/Gopeed.Native/Services/NativeDialogs.cs",
@@ -37,76 +37,86 @@
       "src/Gopeed.Native/App.xaml.cs",
       "Microsoft.WindowsAppSDK.WinUI 2.3.9 / lib/native/Microsoft.UI/Themes/generic.xaml"
     ],
+    "visualReference": {
+      "direction": ".impeccable/compact-native-direction.md",
+      "sources": ["C:/Users/Tavric/projects/downlism/src/Downlism.App/MainWindow.xaml", "C:/Users/Tavric/projects/downlism/src/Downlism.App/NewDownloadWindow.xaml", "C:/Users/Tavric/projects/downlism/src/Downlism.App/NewDownloadWindow.xaml.cs"],
+      "appliedPatterns": ["原生 CommandBar 與單列清單", "標籤與欄位並排", "細線操作底列", "依內容量測 client size", "開始後解除置頂"],
+      "scope": "實際 Windows 原生程式碼；Downlism 網站 DESIGN.md 不作為字級或版面來源。"
+    },
     "colorMeta": {
       "icon-blue": { "role": "primary", "displayName": "下載圖示藍", "purpose": "僅供程式生成的應用程式圖示；不是固定 UI 重點色。" },
       "icon-white": { "role": "neutral", "displayName": "圖示箭頭白", "purpose": "下載箭頭與底線。" }
     },
     "nativeThemeResources": [
-      { "resource": "AccentButtonStyle", "purpose": "主要行動；完整 hover、pressed、focus、disabled 狀態由平台處理。" },
-      { "resource": "TextFillColorSecondaryBrush", "purpose": "次要說明、傳輸量、速度、欄位名稱與底部摘要。" },
-      { "resource": "LayerFillColorDefaultBrush", "purpose": "CommandBar 背景層。" },
+      { "resource": "AccentButtonStyle", "purpose": "每列主動作、確認開始、進度動作、安裝及儲存；完整 hover、pressed、focus、disabled 狀態由平台處理。" },
+      { "resource": "AccentTextFillColorPrimaryBrush", "purpose": "CommandBar 新增下載的前景。" },
+      { "resource": "TextFillColorSecondaryBrush", "purpose": "欄名、傳輸量、檔案圖示、次要動作、說明與底部摘要。" },
+      { "resource": "ApplicationPageBackgroundThemeBrush", "purpose": "確認與進度頁的統一背景。" },
+      { "resource": "LayerFillColorDefaultBrush / DividerStrokeColorDefaultBrush", "purpose": "下載視窗操作底列背景與細線；CommandBar 背景透明。" },
       { "resource": "ControlFillColorTransparentBrush", "purpose": "清單內容透明，保留 ListViewItem 原生選取與焦點呈現。" },
       { "resource": "ContentControlThemeFontFamily / XamlAutoFontFamily", "purpose": "由 Windows 依系統與文字語系選擇字型。" },
-      { "resource": "ControlCornerRadius / OverlayCornerRadius", "purpose": "基本控制項與浮出層形狀；基準值在 DESIGN.md frontmatter。" },
-      { "resource": "SystemFillColorSuccessBrush", "purpose": "完成進度窗的成功勾號；以下載完成文字共同辨識。" }
+      { "resource": "ControlCornerRadius / OverlayCornerRadius", "purpose": "基本控制項與浮出層形狀；基準值在 DESIGN.md frontmatter。" }
     ],
     "typographyMeta": {
-      "title": { "displayName": "頁標題", "purpose": "TitleTextBlockStyle：下載、設定、擴充功能。" },
-      "subtitle": { "displayName": "區段標題", "purpose": "SubtitleTextBlockStyle：詳情、設定區段、擴充功能名稱、空佇列。" },
+      "title": { "displayName": "頁標題", "purpose": "CompactPageTitleStyle：設定、擴充功能；主清單直接以命令列開始。" },
+      "subtitle": { "displayName": "區段標題", "purpose": "CompactSectionTitleStyle：擴充功能名稱等區段。" },
       "body": { "displayName": "內文", "purpose": "原生 TextBlock／BodyTextBlockStyle：標籤、狀態與長內容。" },
-      "body-strong": { "displayName": "檔名", "purpose": "BodyStrongTextBlockStyle：下載名稱。" },
-      "caption": { "displayName": "摘要", "purpose": "CaptionTextBlockStyle：傳輸量、速度與底部摘要。" }
+      "body-strong": { "displayName": "強調名稱", "purpose": "進度窗檔名使用 SemiBold；主清單檔名為原生一般文字。" },
+      "caption": { "displayName": "摘要", "purpose": "SecondaryTextBlockStyle／CaptionTextBlockStyle：欄名、進度文字、底部摘要與進度窗資訊。" }
     },
     "shadows": [],
     "motion": [],
-    "elevation": { "native": ["MicaBackdrop", "ContentDialog", "MenuFlyout"], "purpose": "平台材質、主題層與原生遮罩；沒有自訂陰影或動畫 token。" },
+    "elevation": { "native": ["MicaBackdrop", "ContentDialog", "Flyout", "MenuFlyout"], "purpose": "主窗 Mica、下載窗統一背景與細線底列、原生浮出層；沒有自訂陰影或動畫 token。" },
     "breakpoints": [
-      { "name": "details-column", "value": "1000dip", "behavior": "頁寬達門檻顯示右側詳情；低於門檻以詳細資訊 ContentDialog 開啟。" },
+      { "name": "download-size-column", "value": "720dip", "behavior": "表頭及列 Grid 可用寬度低於門檻，大小欄寬改為 0 並隱藏；保留檔名、進度／狀態、速度與操作。" },
       { "name": "minimum-window", "value": "640dip", "behavior": "最小視窗寬度；最小高度 480 DIP。" }
     ],
+    "nativeLayout": {
+      "mainWindow": { "defaultWindowSize": "960×560 DIP", "minimumWindowSize": "640×480 DIP", "source": "MainWindow.xaml.cs", "behavior": "尺寸依 DPI 轉換為像素；CommandBar 直接提供入口，完整詳情按需開啟。" },
+      "table": { "minimumRowHeight": "44 DIP", "columnOrder": ["檔名", "下載大小", "進度／狀態", "速度", "操作"], "columnTokenRefs": [null, "download-size-column", "download-progress-column", "download-speed-column", "download-actions-column"], "columnSpacing": "12 DIP", "fileGlyphSize": "16 DIP", "actionGlyphSize": "14 DIP", "actionSpacing": "2 DIP" },
+      "downloadWindows": { "widthTokenRefs": { "confirmation": "download-confirmation", "progress": "download-progress" }, "height": "依可見內容量測 client height；150–480 DIP 並受工作區限制，量測後固定大小。", "confirmation": "置中、置頂，不可最大化／最小化；開始後解除置頂並允許最小化。", "formLabelWidth": "44 DIP", "formColumnSpacing": "12 DIP", "contentPadding": "20,16,20,14 DIP", "footerTokenRef": "download-footer" },
+      "measuredClientSizes": { "source": "docs/verification-0.4.0.md", "dpi": 192, "browserConfirmation": "560×311 DIP", "manualConfirmation": "560×375 DIP", "expandedOptions": "560×480 DIP", "runningOrPaused": "520×208 DIP", "completed": "520×195 DIP", "scope": "Win32 對特定內容的量測證據，不作為固定高度 token 或視覺驗收。" }
+    },
     "nativeComponents": [
-      { "name": "主要按鈕", "kind": "button", "refersTo": "button-primary", "source": "MainPage.xaml / SettingsPage.cs / ExtensionsPage.cs", "control": "Button", "style": "AccentButtonStyle", "states": ["normal", "pointer-over", "pressed", "keyboard-focus", "disabled"], "description": "使用原生範本和系統重點色；新增下載於核心未連線時停用。" },
-      { "name": "下載列", "kind": "custom", "refersTo": "download-row", "source": "MainPage.xaml", "control": "ListViewItem + TextBlock + ProgressBar", "states": ["normal", "pointer-over", "selected", "keyboard-focus", "determinate", "indeterminate"], "description": "三列資訊、文字狀態、原生進度；保留選取與焦點範本。" },
-      { "name": "搜尋欄", "kind": "input", "refersTo": "download-search", "source": "MainPage.xaml", "control": "AutoSuggestBox", "description": "Header 搜尋、提示檔名或網址、Find 圖示；Ctrl+F 聚焦。" },
-      { "name": "頂部導覽", "kind": "nav", "source": "MainPage.xaml", "control": "NavigationView", "description": "PaneDisplayMode Top；下載、擴充功能及內建設定入口；平台處理選取指示與 overflow。" },
-      { "name": "命令列", "kind": "custom", "source": "MainPage.xaml", "control": "CommandBar + AppBarButton", "description": "依下載選取與狀態啟用命令，次要操作置於 overflow；DefaultLabelPosition Right。" },
-      { "name": "新增下載", "kind": "custom", "source": "Views/AddDownloadDialog.xaml", "control": "ContentDialog", "description": "單一連結檢查再開始；批次顯示數量；InfoBar 回報錯誤，忙碌時 ProgressRing 及停用主按鈕。" },
-      { "name": "移除下載", "kind": "custom", "source": "MainPage.Actions.cs", "control": "ContentDialog + CheckBox", "description": "批次數量、最多五個名稱與未完成／做種停止提醒；預設取消，是否刪檔沿用偏好。清除完成紀錄保留檔案並排除做種／解壓中的任務。" },
-      { "name": "瀏覽器下載確認視窗", "kind": "custom", "source": "Views/DownloadWindow.cs / Views/DownloadConfirmationPage.xaml / Views/DownloadForm.xaml", "control": "Window + Page + UserControl", "description": "640×540 DIP 獨立視窗；頁面直接填滿，統一背景、24 DIP 外距、20 DIP 區段距、底部按鈕靠右。單行來源、可編輯檔名／位置、解析大小；確認前不建立任務，取消關閉視窗。" },
-      { "name": "下載進度視窗", "kind": "custom", "source": "Views/DownloadProgressPage.cs / Models/DownloadItem.cs", "control": "Window + ProgressBar + TextBlock + Button + CheckBox + Expander", "description": "保留確認窗寬度、高度 480 DIP、最小 540×400 DIP。解壓處理時主動作停用並顯示進度，等待分卷用 indeterminate；做種持續顯示上傳量與速度及停止做種。只有 done 且不在解壓處理、不做種才停止一秒輪詢。解壓成功且原檔已刪時主動作開啟解壓縮資料夾；失敗保留原檔。" },
-      { "name": "狀態主動作", "kind": "button", "source": "Services/DownloadPresentation.cs / Views/NativeButtons.cs / MainPage.xaml", "control": "Button + FontIcon + TextBlock", "description": "主清單與進度窗共用狀態映射；完成時第一個 accent 按鈕是開啟檔案。FontIcon 16 DIP、間距 8 DIP，NativeButtons 同步 AutomationProperties.Name。" },
-      { "name": "檔案類型圖示", "kind": "custom", "source": "Services/DownloadPresentation.cs / MainPage.xaml", "control": "FontIcon", "description": "清單 24 DIP，以副檔名分壓縮檔、安裝檔、音訊、影片、圖片與一般文件，多檔案資源顯示資料夾；平台字型圖示，非 Shell 縮圖。" },
-      { "name": "多選與排序", "kind": "custom", "source": "MainPage.xaml / ViewModels/DownloadsViewModel.cs", "control": "ListView Extended + ComboBox", "description": "Extended 多選、Ctrl+A／Delete 限清單焦點；選取批次暫停／續傳／移除／複製，需單選的詳情與來源命令停用。排序為最新／最舊／檔名／大小／進度；篩選與排序最小寬132 DIP、搜尋240 DIP。" },
-      { "name": "進階下載選項", "kind": "custom", "source": "Views/DownloadForm.xaml / Views/DownloadOptionsPanel.cs", "control": "Expander + ComboBox + NumberBox + TextBox + PasswordBox + CheckBox", "description": "分類、最近連結、直接開始、檔案全選；進階選項含 HTTP 方法／內容／標頭、憑證、連線數、Tracker、代理、Torrent、解壓與密碼。自訂代理才啟用認證欄位。" },
+      { "name": "主要按鈕", "kind": "button", "refersTo": "button-primary", "source": "App.xaml / Views/NativeButtons.cs / Views/DownloadProgressPage.cs / Views/SettingsPage.cs / Views/ExtensionsPage.cs", "control": "Button + FontIcon + TextBlock", "style": "AccentButtonStyle", "states": ["normal", "pointer-over", "pressed", "keyboard-focus", "disabled"], "description": "使用原生範本和系統重點色；一般文字按鈕為 16 DIP 圖示與 8 DIP 間距。完成時進度窗第一個 accent 按鈕為開啟檔案；解壓中停用，原檔已刪則開啟解壓縮資料夾。" },
+      { "name": "下載列", "kind": "custom", "refersTo": "download-row", "source": "MainPage.xaml / MainPage.Rows.cs / Models/DownloadItem.cs", "control": "ListViewItem + TextBlock + ProgressBar + Button", "states": ["normal", "pointer-over", "selected", "keyboard-focus", "determinate", "progress-collapsed"], "description": "單列資訊，檔名占剩餘寬度，其餘欄引用 frontmatter token。第一個 RowPrimaryButtonStyle 依狀態為開啟／暫停／繼續／重試；後接透明次要資料夾及移除。已知大小且未完成、未失敗才顯示 determinate 進度。Extended 多選，完成列雙擊開啟，其餘雙擊詳情。" },
+      { "name": "搜尋、篩選與排序", "kind": "input", "refersTo": "download-filter-sort", "source": "MainPage.xaml / ViewModels/DownloadsViewModel.cs", "control": "AutoSuggestBox + ComboBox", "description": "篩選與排序固定欄寬，搜尋占中間剩餘空間，提示搜尋檔名或來源，Ctrl+F 聚焦。篩選全部／進行中／暫停／完成／失敗；排序最新／最舊／檔名／大小／進度。" },
+      { "name": "原生命令列", "kind": "nav", "source": "MainPage.xaml / MainPage.xaml.cs / MainPage.Actions.cs", "control": "CommandBar + AppBarButton + MenuFlyout", "description": "透明背景，DefaultLabelPosition Right，dynamic overflow。新增、貼上、全部暫停／繼續、單選詳情、擴充功能及設定為主要命令；選取操作、來源更新、重新下載、複製、移除、全選、清除完成與重新整理在 overflow。設定／擴充功能頁有下載清單返回入口。每列保留內容功能表，移除仍以預設取消的原生確認。" },
+      { "name": "下載確認視窗", "kind": "custom", "refersTo": "download-confirmation", "source": "Views/DownloadWindow.cs / Views/DownloadConfirmationPage.xaml / Views/DownloadConfirmationPage.xaml.cs / Views/DownloadForm.xaml / Views/DownloadForm.xaml.cs", "control": "Window + Page + UserControl", "description": "內容量測高度，確認期間置頂。標籤／欄位並排，瀏覽器來源為單行；手動新增保留多行、Torrent、最近連結、分類與檔案選取。檔名／位置可編輯，解析大小後由開始按鈕提交；確認前不建立任務。取消關閉，進階選項預設收合，底列操作靠右。" },
+      { "name": "下載進度視窗", "kind": "custom", "refersTo": "download-progress", "source": "Views/DownloadWindow.cs / Views/DownloadProgressPage.cs / Models/DownloadItem.cs", "control": "Window + ProgressBar + TextBlock + Button + CheckBox + Flyout", "description": "開始後解除置頂並可最小化，重新量測內容高度。保留檔名、位置、傳輸／速度／剩餘時間、狀態及操作；未知大小隱藏進度。來源在 14 DIP 省略圖示 Flyout，寬 380 DIP、最大高 220 DIP，可選取及複製。完成且不在解壓時隱藏進度；完成且無解壓／做種才停止一秒輪詢，開啟後關閉偏好也在此時顯示。做種保留上傳量、速度及停止做種。" },
+      { "name": "進階下載選項", "kind": "custom", "source": "Views/DownloadForm.xaml / Views/DownloadOptionsPanel.cs", "control": "Expander + ComboBox + NumberBox + TextBox + PasswordBox + CheckBox", "description": "下載選項預設收合，含直接開始、連線數、HTTP 方法／內容／標頭、憑證、Tracker、代理、Torrent、解壓與密碼。自訂代理才啟用認證欄位。忙碌時停用主按鈕並顯示 18 DIP ProgressRing；InfoBar 保留輸入。" },
       { "name": "設定分區", "kind": "custom", "source": "Views/SettingsPage.cs / Views/SettingsPage.Sections.cs", "control": "Expander + ScrollViewer + native fields", "description": "最大760 DIP，分區間16 DIP、內部12 DIP；一般預設展開，其他分區收合；底列儲存保持可達。一般／分類／壓縮檔與Torrent／HTTP／BT／eD2k／鏡像／代理／接管／完成動作／關於。" },
       { "name": "擴充商店與已安裝", "kind": "custom", "source": "Views/ExtensionsPage.cs / Views/ExtensionsPage.Installed.cs", "control": "Pivot + Expander + native fields", "description": "最大800 DIP、間距16 DIP。商店搜尋、收藏／安裝／更新排序、分頁載入；其他來源安裝Expander。已安裝有啟用、設定、檢查更新、解除安裝；錯誤InfoBar與重新載入入口。" },
-      { "name": "任務詳情", "kind": "custom", "source": "Views/TaskDetailsDialog.cs", "control": "ContentDialog + Pivot + ListView", "description": "資訊／檔案／連線，最高440 DIP、最小寬420 DIP；檔案選取提供開啟、定位、Windows分享。開啟與分享需完成、不在解壓且檔案存在，連線顯示HTTP進度或BT統計。" },
-      { "name": "來源更新", "kind": "custom", "source": "MainPage.Actions.cs", "control": "ContentDialog + TextBox + CheckBox + InfoBar", "description": "HTTP暫停／失敗任務可更新URL與標頭，預設更新後繼續；也可等待下次瀏覽器連結，明示等待與取消。保留原任務ID與bytes，重新下載另開新增表單。" }
+      { "name": "任務詳情與來源更新", "kind": "custom", "source": "Views/TaskDetailsDialog.cs / MainPage.Actions.cs", "control": "ContentDialog + Pivot + ListView + TextBox + CheckBox + InfoBar", "description": "詳情按需開啟，資訊／檔案／連線最高 440 DIP、最小寬 420 DIP；檔案選取提供開啟、定位、Windows 分享。HTTP 暫停／失敗可更新 URL 與標頭，或等待下次瀏覽器連結；保留原任務 ID 與 bytes，重新下載另開新增表單。" }
     ],
-    "previewPolicy": "原生 WinUI 3 為設計權威。components 保留為空，不建立 HTML/CSS 仿製控制項；nativeComponents 記錄實際原生元件。沒有為固定圖示色生成未實作的 tonal ramp。",
+    "previewPolicy": "Windows desktop / WinUI 3 為設計權威。components 保留為空，nativeComponents 記錄實際原生元件；原生 XAML 不執行 HTML/CSS detector。沒有 HTML/CSS 仿製、圖像 mockup 或為固定圖示色合成未實作的 tonal ramp。",
     "assetProvenance": [
       { "source": "scripts/create_icon.py", "method": "Pillow 程式繪圖，4× 採樣後 Lanczos 縮圖", "assets": ["AppIcon.ico", "Square44x44Logo.scale-200.png", "Square44x44Logo.targetsize-24_altform-unplated.png", "Square44x44Logo.targetsize-48_altform-lightunplated.png", "Square150x150Logo.scale-200.png", "StoreLogo.png", "LockScreenLogo.scale-200.png"], "externalImage": false, "aiGenerated": false },
       { "source": "Microsoft.WindowsAppSDK.WinUI.CSharp.Templates", "scaffold": "winapp 0.7.0 new --name Gopeed.Native --template winui-mvvm --template-version latest --use-defaults", "assets": ["SplashScreen.scale-200.png", "Wide310x150Logo.scale-200.png"], "usage": "官方範本素材；保留為 Content，目前 unpackaged 介面未使用。" },
       { "source": "Microsoft.WindowsAppSDK.WinUI runtime", "assets": ["Microsoft.UI.Xaml/Assets/NoiseAsset_256x256_PNG.png"], "usage": "Mica 平台材質，隨 runtime 打包。" }
     ],
-    "reviewEvidence": ["docs/images/native-main.png", "docs/images/native-confirmation-0.3.0.png", "docs/images/native-completed-0.3.0.png", "docs/images/native-settings-0.3.0.png", "docs/images/native-store-0.3.0.png", "docs/images/native-extracted-0.3.0.png"],
-    "pendingEvidence": [],
-    "previousVersionEvidence": [".impeccable/review/desktop.png", ".impeccable/review/dark.png", ".impeccable/review/compact.png", ".impeccable/review/settings.png", ".impeccable/review/extensions.png", ".impeccable/review/add-dialog.png", ".impeccable/review/delete-dialog.png"],
+    "reviewEvidence": [],
+    "pendingEvidence": ["0.4.0 淺色／深色、預設／最小主視窗", "0.4.0 確認及展開下載選項", "0.4.0 下載中／暫停／完成", "0.4.0 設定與擴充功能"],
+    "previousVersionEvidence": ["docs/images/native-main.png", "docs/images/native-confirmation-0.3.0.png", "docs/images/native-completed-0.3.0.png", "docs/images/native-settings-0.3.0.png", "docs/images/native-store-0.3.0.png", "docs/images/native-extracted-0.3.0.png", ".impeccable/review/desktop.png", ".impeccable/review/dark.png", ".impeccable/review/compact.png", ".impeccable/review/settings.png", ".impeccable/review/extensions.png", ".impeccable/review/add-dialog.png", ".impeccable/review/delete-dialog.png"],
     "preferences": { "source": "Services/UiPreferences.cs", "storage": "preferences.json", "rememberDirectory": "預設開啟；成功建立後保存最後位置，表單載入優先於核心預設，外部明確指定位置再覆蓋。", "closeAfterOpen": "預設開啟，完成才顯示；按開啟成功後關閉，不是完成即自動關閉。" },
-    "inputFlows": { "clipboard": "主清單文字連結開啟新增表單；HTTP、HTTPS、magnet、file 絕對 URI。", "drop": "WebLink／文字連結或 torrent StorageItems 開啟新增表單；一般檔案不接受。", "activation": "create protocol／pending download request 直接開獨立確認窗；一般啟動及 extension 路由仍開主窗，錯誤也在主窗回報。", "icons": "WindowAppearance.SetIcon 在主窗與下載窗載入部署目錄 Assets/AppIcon.ico。" },
-    "lifetime": { "source": "App.xaml.cs", "revision": "5fee56b", "description": "保留下載視窗強引用，Closed 後移除；主窗與所有下載窗皆關閉時才解除單一實例 key，避免關閉期間的請求交接遺失。" },
-    "finishReview": { "status": "0.3.0 verified Windows release", "scope": "原生來源審查、有效圖、確認與下載、啟動續傳、設定、擴充管理與解除安裝／重新安裝；跨環境限制見交付紀錄。", "record": "docs/verification-0.3.0.md" },
-    "previousFinishReview": { "version": "0.2.0", "verdict": "ship", "record": "docs/verification-0.2.0.md", "scope": "前版結論，不移作0.3.0整體驗證。" },
-    "behaviorEvidence": ["官方native host base64 create到確認窗；取消不建立任務。", "ZIP開始與解壓後hash驗證。", "HTTP來源更新保留同一任務ID與已下載bytes。", "UIA NumberBox輸入Enter提交後API config.maxRunning=256。", "本機測試extension普通複製、設定與停用。", "啟動自動續傳、每日Tracker更新、Webhook已測。"],
-    "verificationLimits": ["設定、商店與解壓完成圖來自同版較早建置，最後建置另驗證主窗、確認及完成；不宣稱每個狀態與尺寸都經像素核對。", "舊版ship與空白圖不當新版證據。", "真實BT／eD2k、第三方網站、Windows分享目標、Narrator、高對比、跨App拖出、Windows10未測。", "外部檔案handler內容載入未確認。", "未宣稱RAM節省；SDK資源優先於截圖取色。"]
+    "inputFlows": { "clipboard": "主清單文字連結開啟獨立新增視窗；HTTP、HTTPS、magnet、eD2k、file 絕對 URI。", "drop": "WebLink／文字連結或 Torrent StorageItems 開啟新增視窗；一般檔案不接受。", "activation": "create protocol／pending download request 直接開獨立確認窗；一般啟動及 extension 路由仍開主窗，錯誤也在主窗回報。", "icons": "WindowAppearance.SetIcon 在主窗與下載窗載入部署目錄 Assets/AppIcon.ico。" },
+    "lifetime": { "source": "App.xaml.cs", "description": "保留下載視窗強引用，Closed 後移除；主窗與所有下載窗皆關閉時才解除單一實例 key，避免關閉期間的請求交接遺失。" },
+    "finishReview": { "version": "0.4.0", "disposition": "recapture", "status": "視覺驗收待有效截圖", "scope": "本次 Windows 鎖定／安全桌面，PrintWindow 空白圖與標題列不是有效視覺證據；需要重新擷取後完整審查。", "record": "docs/verification-0.4.0.md" },
+    "previousFinishReview": { "version": "0.3.0", "status": "previous Windows release verification", "record": "docs/verification-0.3.0.md", "scope": "舊版功能與截圖證據，不移作 0.4.0 視覺驗收或全部重測。" },
+    "behaviorEvidence": ["官方 Native Messaging 長度框架、ping 與 Base64 create；已安裝版確認前不建立任務，取消不下載。", "64 MiB 本機 HTTP ZIP 經 UIA 開始／暫停／續傳，完成 SHA-256 相符。", "完成主按鈕為開啟檔案，UIA 呼叫後依偏好關閉下載窗。", "Win32 GetClientRect／GetDpiForWindow 量測 client size；WS_EX_TOPMOST 確認為 true、開始及完成為 false。", "最小主窗 UIA 顯示大小欄隱藏、檔名保留、列高 44 DIP；CommandBar overflow 可開設定並返回。", "640 DIP 主窗內擴充功能 Expander 的 UIA 寬為 571 DIP，沒有水平溢出；仍待截圖視覺審查。", "來源更新確認 client size 560×280 DIP、置頂為 true；更新續傳保留原任務 ID 與 bytes，完成 SHA-256 相符。", "0.3.0 → 0.4.0 靜默升級、登錄版本與前端／核心／host／圖示 SHA-256 驗證；既有任務保留。"],
+    "verificationLimits": ["本文記錄完成的原生程式碼狀態，尚未視覺驗收；沒有有效 0.4.0 截圖。", "reviewer disposition 為 recapture，不能寫成 ship、視覺通過或已驗收。", "UIA、Win32 尺寸／置頂、SHA-256 與安裝證據不能替代字級、對比、裁切及參考一致性的圖像驗收。", "舊版 ship、舊版有效圖及鎖定桌面空白圖不當新版證據。", "既有解壓、設定儲存、擴充管理、啟動續傳、Tracker、Webhook 與解除安裝測試見 0.3.0，未全部重新測過；本版來源更新另有實測。", "真實 BT／eD2k、第三方網站、Windows 分享目標、Narrator、高對比、跨 App 拖出、Windows 10 未完成跨環境實測。", "未宣稱 RAM 節省；SDK 資源優先於截圖取色。"]
   },
   "components": [],
   "narrative": {
     "northStar": "Windows 下載工作佇列",
-    "overview": "以 Windows Fluent 原生控制項呈現下載狀態、進度與下一步操作。畫面資訊密度服務於工作佇列：上方導覽、平面下載清單、依選取項目啟用的命令與詳細資訊；不加入儀表板數字或裝飾性卡片。\n\n介面由 WinUI 3 的 XamlControlsResources、ThemeResource 與控制項範本建立。繁體中文標籤與清楚的文字狀態是主要資訊，圖示及系統重點色輔助辨識。主題、字型、焦點、停用與浮出視窗外觀優先交由平台處理。",
-    "keyCharacteristics": ["原生 Fluent、Mica 視窗背景與頂部導覽。", "平面清單、可讀的進度與文字狀態。", "單一系統重點色，淺色與深色同步。", "窄視窗保留操作，以對話框顯示完整詳情。"],
-    "rules": [{ "name": "The Theme Resource Rule", "body": "新增介面應沿用平台資源，不從截圖取色後覆蓋 WinUI 的完整狀態範本。所有 ContentDialog 經 NativeDialogs.ShowAsync 將 RequestedTheme 同步為視窗實際主題。", "section": "colors" }],
-    "dos": ["Do 沿用原生 WinUI 控制項、ThemeResource 與完整互動狀態。", "Do 用繁體中文文字描述狀態、錯誤與操作結果。", "Do 在窄視窗保留詳情命令與原生對話框。", "Do 將來源、路徑和長檔名放在可換行、可選取的詳情內。", "Do 保留圖示生成程式與範本素材來源；實測記憶體後才報告用量。"],
-    "donts": ["Don't 用硬編碼配色取代系統重點色或深淺主題。", "Don't 增加裝飾性卡片、儀表板摘要來取代下載工作佇列。", "Don't 移植 Flutter／網頁控制項或原 Gopeed 按鈕位置作為版面約束。", "Don't 將截圖中曾出現的主題缺陷寫成規範，也不要宣稱尚未實測的 Narrator、高對比或 RAM 節省。"]
+    "overview": "以 Windows Fluent 原生控制項呈現下載狀態、進度與下一步操作。單列清單讓檔名、傳輸量、進度／狀態、速度及動作沿同一條水平線掃讀；CommandBar 直接承載新增、批次操作、設定與擴充功能。完整詳情按需開啟，不佔常駐版面。\n\n介面由 WinUI 3 的 `XamlControlsResources`、`ThemeResource` 與控制項範本建立。繁體中文標籤與清楚的文字狀態是主要資訊，圖示及系統重點色輔助辨識。確認窗與進度窗各有內容寬度，依可見欄位量測高度；細線底列承載下一步操作。主題、字型、焦點、停用與浮出視窗外觀交由平台處理，沒有裝飾性動畫或攝影素材。",
+    "keyCharacteristics": ["原生 Fluent、主視窗 Mica 與直接操作的 CommandBar。", "44 DIP 最小列高，資訊與三個操作在單列內對齊。", "每列第一個按鈕使用系統重點色，狀態決定暫停、繼續、重試或開啟。", "確認與進度視窗依內容量測高度，進階內容按需展開。", "窄視窗隱藏大小欄；完整來源、路徑與檔案詳情按需開啟。"],
+    "rules": [
+      { "name": "The Theme Resource Rule", "body": "新增介面應沿用平台資源，不從截圖取色後覆蓋 WinUI 的完整狀態範本。所有 `ContentDialog` 經 `NativeDialogs.ShowAsync` 將 `RequestedTheme` 同步為視窗實際主題。", "section": "colors" },
+      { "name": "The Compact Hierarchy Rule", "body": "頁標題與區段標題使用前置資料的精簡層級，下載清單不另加入大型頁首；狀態與摘要以文字維持掃讀。", "section": "typography" },
+      { "name": "The Content Measurement Rule", "body": "確認與進度窗依可見內容重新量測 client height；進階欄位收合、來源細節浮出，不為尚未使用的內容預留大面積。", "section": "layout" }
+    ],
+    "dos": ["Do 沿用原生 WinUI 控制項、ThemeResource 與完整互動狀態。", "Do 用繁體中文文字描述狀態、錯誤與操作結果。", "Do 保持單列欄位對齊，窄視窗隱藏大小欄並保留操作。", "Do 使用內容量測調整下載視窗高度，將進階內容收合。", "Do 將來源、路徑和長檔名放在可換行、可選取的詳情內。", "Do 保留圖示生成程式與範本素材來源；實測記憶體後才報告用量。"],
+    "donts": ["Don't 用硬編碼配色取代系統重點色或深淺主題。", "Don't 恢復大型頁首、三列下載項目、常駐詳情欄或固定大進度窗。", "Don't 增加裝飾性卡片、儀表板摘要來取代下載工作佇列。", "Don't 將 Downlism 網站的展示版面帶入原生操作介面。", "Don't 移植 Flutter／網頁控制項或原 Gopeed 按鈕位置作為版面約束。", "Don't 將截圖中曾出現的主題缺陷寫成規範，也不要宣稱尚未實測的 Narrator、高對比或 RAM 節省。"]
   }
 }
