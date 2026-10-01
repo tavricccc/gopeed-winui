@@ -120,8 +120,8 @@ public sealed partial class MainPage : Page
  private void NewShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { AddDownload(s, new()); e.Handled = true; }
  private void SearchShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { SearchBox.Focus(FocusState.Keyboard); e.Handled = true; }
  private async void RefreshShortcut(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { await ViewModel.RefreshAsync(); e.Handled = true; }
- private void OpenSection(Page page) { DownloadsSurface.Visibility = Visibility.Collapsed; SettingsFrame.Content = page; SettingsFrame.Visibility = Visibility.Visible; BackToDownloads.Visibility = Visibility.Visible; }
- private void ShowDownloads(object sender, RoutedEventArgs args) { SettingsFrame.Content = null; SettingsFrame.Visibility = Visibility.Collapsed; DownloadsSurface.Visibility = Visibility.Visible; BackToDownloads.Visibility = Visibility.Collapsed; }
+ private void OpenSection(Page page) { DownloadsSurface.Visibility = Visibility.Collapsed; DownloadsCommands.Visibility = Visibility.Collapsed; SettingsFrame.Content = page; SettingsFrame.Visibility = Visibility.Visible; BackToDownloads.Visibility = Visibility.Visible; }
+ private void ShowDownloads(object sender, RoutedEventArgs args) { SettingsFrame.Content = null; SettingsFrame.Visibility = Visibility.Collapsed; DownloadsSurface.Visibility = Visibility.Visible; DownloadsCommands.Visibility = Visibility.Visible; BackToDownloads.Visibility = Visibility.Collapsed; }
  private void ShowSettings(object sender, RoutedEventArgs args) => OpenSection(new SettingsPage(ViewModel));
  private void ShowExtensions(object sender, RoutedEventArgs args) => OpenSection(new ExtensionsPage(ViewModel));
 }

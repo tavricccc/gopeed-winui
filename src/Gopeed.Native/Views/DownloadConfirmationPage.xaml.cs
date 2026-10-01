@@ -11,7 +11,11 @@ public sealed partial class DownloadConfirmationPage : Page
     public event Action<string>? Started;
     public event Action? Cancelled;
     public event Action? LayoutChanged;
-    public double PreferredHeight(double width) => form.MeasureContentHeight(width - 40) + 88;
+    public double PreferredHeight(double width)
+    {
+        Footer.Measure(new Windows.Foundation.Size(width, double.PositiveInfinity));
+        return form.MeasureContentHeight(width - 56) + 48 + Footer.DesiredSize.Height;
+    }
     public DownloadConfirmationPage(CoreClient core, JsonObject request, nint owner, bool compact = true)
     {
         InitializeComponent();

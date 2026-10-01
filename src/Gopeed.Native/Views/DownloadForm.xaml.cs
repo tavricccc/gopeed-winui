@@ -30,7 +30,7 @@ public sealed partial class DownloadForm : UserControl
   requestOptions.RequestChanged += InvalidateResolution;
   Headers.TextChanged += (_, _) => InvalidateResolution();
   FormContent.SizeChanged += (_, _) => LayoutChanged?.Invoke();
-  if (compact) { Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; RecentLinksButton.Visibility = Visibility.Collapsed; }
+  if (compact) { Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 36; Links.MaxHeight = double.PositiveInfinity; ManualActions.Visibility = Visibility.Collapsed; }
   Loaded += InitializeForm;
  }
  private async void InitializeForm(object sender, RoutedEventArgs e)
@@ -98,7 +98,7 @@ public sealed partial class DownloadForm : UserControl
  public async Task<bool> SubmitAsync()
  {
   bool complete = false;
-  SetBusy(true); Message.IsOpen = false;
+  SetBusy(true); Message.IsOpen = false; Message.Visibility = Visibility.Collapsed;
   try
   {
    var links = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -161,7 +161,7 @@ public sealed partial class DownloadForm : UserControl
   history.SelectionChanged += (_, _) => dialog.IsPrimaryButtonEnabled = history.SelectedItem is not null;
   if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) Links.Text = (string)history.SelectedItem;
  }
- private void ShowError(Exception e) { Message.Message = UserError.Message(e); Message.IsOpen = true; }
+ private void ShowError(Exception e) { Message.Message = UserError.Message(e); Message.Visibility = Visibility.Visible; Message.IsOpen = true; LayoutChanged?.Invoke(); }
  private void SetAction(string text) { ActionText = text; StateChanged?.Invoke(); LayoutChanged?.Invoke(); }
  private void SetBusy(bool value) { IsBusy = value; Busy.IsActive = value; Busy.Visibility = value ? Visibility.Visible : Visibility.Collapsed; StateChanged?.Invoke(); }
  private sealed record ResolvedFile(int Index, string Name, long Size) { public override string ToString() => $"{Name} · {DownloadItem.FormatBytes(Size)}"; }

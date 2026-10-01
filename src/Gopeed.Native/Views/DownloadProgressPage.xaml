@@ -1,0 +1,77 @@
+<Page x:Class="Gopeed_Native.Views.DownloadProgressPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      FontFamily="{StaticResource ContentControlThemeFontFamily}" FontSize="14">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="Body" Padding="28,24" Spacing="20">
+                <InfoBar x:Name="Error" Severity="Error" Visibility="Collapsed" Closed="HideError"/>
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <FontIcon x:Name="FileIcon" FontSize="24" VerticalAlignment="Top" Margin="0,3,0,0"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock x:Name="FileName" Grid.Column="1" FontFamily="{StaticResource HeadingFontFamily}"
+                               FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2"
+                               TextTrimming="CharacterEllipsis" DragStarting="DragFile"/>
+                </Grid>
+                <StackPanel Spacing="6">
+                    <TextBlock Text="儲存位置" Style="{StaticResource SecondaryTextBlockStyle}"/>
+                    <TextBlock x:Name="Folder" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True"/>
+                </StackPanel>
+                <Grid x:Name="Metrics" ColumnSpacing="24">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <StackPanel Spacing="6">
+                        <TextBlock x:Name="TransferLabel" Text="已下載／總大小" Style="{StaticResource SecondaryTextBlockStyle}"/>
+                        <TextBlock x:Name="Transfer" TextWrapping="Wrap" FontWeight="Medium"/>
+                    </StackPanel>
+                    <StackPanel x:Name="SpeedMetric" Grid.Column="1" Spacing="6">
+                        <TextBlock x:Name="SpeedLabel" Text="下載速度" Style="{StaticResource SecondaryTextBlockStyle}"/>
+                        <TextBlock x:Name="Speed" TextWrapping="Wrap" FontWeight="Medium"/>
+                    </StackPanel>
+                    <StackPanel x:Name="RemainingMetric" Grid.Column="2" Spacing="6">
+                        <TextBlock Text="剩餘時間" Style="{StaticResource SecondaryTextBlockStyle}"/>
+                        <TextBlock x:Name="Remaining" TextWrapping="Wrap" FontWeight="Medium"/>
+                    </StackPanel>
+                </Grid>
+                <StackPanel x:Name="ProgressSection" Spacing="10">
+                    <Grid ColumnSpacing="20">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock x:Name="Status" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="Percent" Grid.Column="1" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </Grid>
+                    <ProgressBar x:Name="Progress" Maximum="100" IsIndeterminate="False" AutomationProperties.Name="下載進度"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+        <Border x:Name="Footer" Grid.Row="1" Style="{StaticResource DownloadFooterStyle}">
+            <Grid ColumnSpacing="20">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Button HorizontalAlignment="Left" VerticalAlignment="Center" Style="{StaticResource SubtleButtonStyle}"
+                        AutomationProperties.Name="更多選項" ToolTipService.ToolTip="更多選項">
+                    <FontIcon Glyph="&#xE712;" FontSize="16"/>
+                    <Button.Flyout>
+                        <Flyout Placement="TopEdgeAlignedLeft">
+                            <ScrollViewer Width="420" MaxHeight="300">
+                                <StackPanel Spacing="16">
+                                    <TextBlock Text="來源網址" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="Source" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                                    <Button Content="複製網址" Click="CopySource" HorizontalAlignment="Left"/>
+                                    <CheckBox x:Name="CloseAfterOpen" Content="開啟檔案後關閉此視窗"
+                                              Checked="SaveClosePreference" Unchecked="SaveClosePreference"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                    <Button x:Name="Primary" Style="{StaticResource AccentButtonStyle}" Content="正在連接…"
+                            MinHeight="36" MinWidth="112" IsEnabled="False" Click="PrimaryClick" AutomationProperties.AutomationId="ProgressPrimary"/>
+                    <Button x:Name="Browse" Content="開啟資料夾" MinHeight="36" Visibility="Collapsed" Click="BrowseClick"/>
+                    <Button x:Name="StopSeed" Content="停止做種" MinHeight="36" Visibility="Collapsed" Click="StopSeedClick"/>
+                    <Button Content="關閉" MinHeight="36" MinWidth="76" Click="CloseClick" AutomationProperties.AutomationId="CloseProgress"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
