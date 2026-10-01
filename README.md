@@ -6,11 +6,11 @@
 
 ## 安裝
 
-從 [v0.4.0 Release](https://github.com/tavricccc/gopeed-winui/releases/tag/v0.4.0) 下載：
+從 [v0.5.0 Release](https://github.com/tavricccc/gopeed-winui/releases/tag/v0.5.0) 下載：
 
-- **GopeedNative-Setup-0.4.0-x64.exe**：安裝至目前使用者，建立開始功能表入口、自動連接官方瀏覽器擴充套件並註冊 `gopeed://`，不需要管理員權限。
-- **GopeedNative-Portable-0.4.0-x64.zip**：完整解壓縮後執行 `Gopeed.Native.exe`；不註冊協定。
-- **GopeedNative-Source-0.4.0.zip**：完整原始碼，包含固定版本的上游核心。
+- **GopeedNative-Setup-0.5.0-x64.exe**：安裝至目前使用者，建立開始功能表入口、自動連接官方瀏覽器擴充套件並註冊 `gopeed://`，不需要管理員權限。
+- **GopeedNative-Portable-0.5.0-x64.zip**：完整解壓縮後執行 `Gopeed.Native.exe`；不註冊協定。
+- **GopeedNative-Source-0.5.0.zip**：完整原始碼，包含固定版本的上游核心。
 
 目前實測環境是 Windows 11 x64。前端採自包含部署，不需要另外安裝 .NET 或 Windows App SDK runtime。Windows 10 未完成實機驗證。
 
@@ -25,7 +25,7 @@
 | 下載失敗 | 重試下載 |
 | 已完成 | 開啟檔案 |
 
-主清單採單列表格，每筆右側的第一個重點色按鈕就是主要操作。完成視窗也提供「資料夾」與「開啟後關閉」。主清單雙擊已完成的項目可開啟檔案，其他狀態則顯示詳情。刪除任務時，可另外勾選刪除檔案，預設保留。
+主清單採單列表格，每筆右側的第一個重點色按鈕就是主要操作。完成視窗提供「開啟資料夾」；「開啟檔案後關閉此視窗」與来源網址放在更多選項。主清單雙擊已完成的項目可開啟檔案，其他狀態則顯示詳情。刪除任務時，可另外勾選刪除檔案，預設保留。
 
 新增單一連結時，先檢查來源、大小與可選檔案，再確認儲存位置與檔名；多行連結可批次開始。可選擇分類、使用最近連結、調整 HTTP 方法／內容／標頭、代理、憑證驗證與解壓縮選項。HTTP 標頭可保留 Cookie、Referer 與 Sec-Ch-Ua 品牌引號。
 
