@@ -1,10 +1,10 @@
 # Gopeed v1.9.3 功能對照
 
-比較基準是上游 v1.9.3 的 Windows Flutter 前端與 API，固定 commit `a5cd53f94c18ac65add684b1113fa5f0b47cc4da`。Gopeed Native 0.3.0 使用同一核心，以下區分「有原生操作入口」與「已完成端到端實測」。
+比較基準是上游 v1.9.3 的 Windows Flutter 前端與 API，固定 commit `a5cd53f94c18ac65add684b1113fa5f0b47cc4da`。Gopeed Native 0.4.0 使用同一核心，以下區分「有原生操作入口」與「已完成端到端實測」。
 
 ## 下載與檔案
 
-| 原版功能 | 0.2.0 狀態 | 0.3.0 原生入口及行為 |
+| 原版功能 | 0.2.0 狀態 | 0.4.0 原生入口及行為 |
 | --- | --- | --- |
 | HTTP／HTTPS、磁力、Torrent | 已有基本新增 | 新增表單、拖放、剪貼簿、Torrent 選擇器；Installer 可註冊為 Windows 預設程式的候選 |
 | eD2k | 核心支援，入口不完整 | 新增、剪貼簿與協定啟動；設定提供 TCP／UDP 及伺服器來源 |
@@ -28,7 +28,7 @@
 
 ## 設定與系統整合
 
-| 原版功能 | 0.3.0 入口／實際執行位置 |
+| 原版功能 | 0.4.0 入口／實際執行位置 |
 | --- | --- |
 | 下載位置、同時下載數、HTTP 預設 | 一般及 HTTP 設定；同時下載及 HTTP 連線上限 256 |
 | HTTP User-Agent、伺服器檔案時間 | HTTP 設定，交由上游執行 |
@@ -53,7 +53,7 @@
 
 ## 擴充功能
 
-| 原版功能 | 0.3.0 入口 |
+| 原版功能 | 0.4.0 入口 |
 | --- | --- |
 | 商店、搜尋、排序、分頁 | 擴充功能商店；名稱／描述搜尋，收藏／安裝／更新排序，載入更多 |
 | 安裝來源與子目錄 | 商店安裝及其他來源；保留 `repo#directory` 格式 |
@@ -81,4 +81,4 @@
 - [Chrome Native Messaging 格式與註冊](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging)
 - [Edge Native Messaging 與雙商店 extension ID](https://learn.microsoft.com/en-us/microsoft-edge/extensions/developer-guide/native-messaging)
 
-實際安裝、測試與未驗證項目見 [0.3.0 驗證紀錄](verification-0.3.0.md)。
+實際安裝、測試與未驗證項目見 [0.4.0 驗證紀錄](verification-0.4.0.md)。
