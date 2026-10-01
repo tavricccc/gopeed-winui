@@ -11,10 +11,12 @@ $source = Join-Path $stage 'source'
 $output = Join-Path $repo "artifacts/GopeedNative-Source-$Version.zip"
 [IO.Directory]::CreateDirectory($stage) | Out-Null
 try {
-    git -C $repo archive HEAD --format=zip --output=(Join-Path $stage 'native.zip')
+    $nativeArchive = Join-Path $stage 'native.zip'
+    $upstreamArchive = Join-Path $stage 'upstream.zip'
+    git -C $repo archive HEAD --format=zip "--output=$nativeArchive"
     if ($LASTEXITCODE) { throw 'Native source archive failed' }
     Expand-Archive -LiteralPath (Join-Path $stage 'native.zip') -DestinationPath $source
-    git -C (Join-Path $repo 'upstream') archive HEAD --format=zip --output=(Join-Path $stage 'upstream.zip')
+    git -C (Join-Path $repo 'upstream') archive HEAD --format=zip "--output=$upstreamArchive"
     if ($LASTEXITCODE) { throw 'Upstream source archive failed' }
     Expand-Archive -LiteralPath (Join-Path $stage 'upstream.zip') -DestinationPath (Join-Path $source 'upstream')
     $revision = git -C $repo rev-parse HEAD
