@@ -16,7 +16,7 @@ if ($Test) {
 }
 $portable = [IO.Path]::GetFullPath((Join-Path $repo 'artifacts/portable'))
 if ($portable -ne "$repo\artifacts\portable") { throw 'Unexpected publish path' }
-if (Test-Path -LiteralPath $portable) { Remove-Item -LiteralPath $portable -Recurse -Force }
+if (Test-Path -LiteralPath $portable) { Get-ChildItem -LiteralPath $portable -Force | Remove-Item -Recurse -Force }
 dotnet publish (Join-Path $repo 'src/Gopeed.Native/Gopeed.Native.csproj') -c Release -r win-x64 -p:Platform=x64 -o $portable
 if ($LASTEXITCODE) { throw 'WinUI publish failed' }
 foreach ($asset in @('Assets/AppIcon.ico', 'Assets/Square44x44Logo.scale-200.png')) {
