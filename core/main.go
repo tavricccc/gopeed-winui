@@ -28,6 +28,7 @@ func main() {
 	root := flag.String("data", "", "Application data directory")
 	ui := flag.String("ui", "", "Native frontend executable")
 	icon := flag.String("icon", "", "Tray icon path")
+	apiPort := flag.Int("port", 18762, "Local API port")
 	shutdown := flag.Bool("shutdown", false, "Gracefully stop the running core")
 	flag.Parse()
 	if *root == "" {
@@ -81,7 +82,7 @@ func main() {
 	}
 	token := string(tokenBytes)
 	api, apiListener, err := rest.BuildServer(&model.StartConfig{
-		Address: "127.0.0.1:18762", Storage: model.StorageBolt,
+		Address: fmt.Sprintf("127.0.0.1:%d", *apiPort), Storage: model.StorageBolt,
 		StorageDir: *root, ApiToken: token, ProductionMode: true,
 		RefreshInterval: 1000,
 	})
@@ -139,6 +140,7 @@ func main() {
 	if err := os.Rename(sessionPath+".tmp", sessionPath); err != nil {
 		panic(err)
 	}
+	startExtras(rest.Downloader, port, token)
 	defer func() { api.Close(); rest.Stop(); os.Remove(sessionPath) }()
 	fmt.Println("Gopeed Native core ready")
 	if *ui == "" {

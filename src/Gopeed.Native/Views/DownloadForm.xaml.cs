@@ -16,6 +16,7 @@ public sealed partial class DownloadForm : UserControl
  private readonly nint owner;
  private string lastInput = "";
  private readonly bool compact;
+ private readonly DownloadOptionsPanel requestOptions = new();
  public string? CreatedTaskId { get; private set; }
  public string ActionText { get; private set; } = "檢查連結";
  public bool IsBusy { get; private set; }
@@ -23,6 +24,9 @@ public sealed partial class DownloadForm : UserControl
  public DownloadForm(CoreClient core, JsonObject? initial = null, nint? owner = null, bool compact = false)
  {
   this.core = core; this.initial = initial; this.owner = owner ?? App.WindowHandle; this.compact = compact; InitializeComponent();
+  OptionsSurface.Children.Add(requestOptions);
+  requestOptions.RequestChanged += InvalidateResolution;
+  Headers.TextChanged += (_, _) => InvalidateResolution();
   if (compact) { Links.Header = "來源網址"; Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; FileName.Header = "檔名"; }
   Loaded += InitializeForm;
  }
@@ -31,13 +35,17 @@ public sealed partial class DownloadForm : UserControl
   Loaded -= InitializeForm; SetBusy(true);
   try
   {
-   var config = await core.GetAsync("config"); Destination.Text = config?["downloadDir"]?.GetValue<string>() ?? "";
+   var config = (await core.GetAsync("config"))!; Destination.Text = config["downloadDir"]?.GetValue<string>() ?? "";
+   requestOptions.Load(initial, config); Connections.Value = config["protocolConfig"]?["http"]?["connections"]?.GetValue<int>() ?? 8;
+   DirectDownload.IsChecked = config["extra"]?["defaultDirectDownload"]?.GetValue<bool>() == true;
+   foreach (var category in CategoriesEditor.Read(config)) Category.Items.Add(new ComboBoxItem { Content = category.Name, Tag = category.Path });
+   Category.Visibility = Category.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
    var prefs = UiPreferences.Load();
    if (prefs.RememberDownloadDirectory && prefs.LastDownloadDirectory.Length > 0) Destination.Text = prefs.LastDownloadDirectory;
    if (Destination.Text.Length == 0) Destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
    ApplyInitial();
    var links = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-   if (initial is not null && links.Length == 1) await InspectAsync(links[0]);
+   if (initial is not null && links.Length == 1 && DirectDownload.IsChecked != true) await InspectAsync(links[0]);
    else if (links.Length > 1) SetAction($"開始 {links.Length} 個下載");
   }
   catch (Exception error) { ShowError(error); }
@@ -53,7 +61,10 @@ public sealed partial class DownloadForm : UserControl
   if (initial["opts"]?["extra"]?["connections"] is JsonValue connections) Connections.Value = connections.GetValue<int>();
   if (initial["req"]?["extra"]?["header"] is JsonObject headers) Headers.Text = string.Join("\n", headers.Select(pair => $"{pair.Key}: {pair.Value}"));
  }
- private void InputChanged(object s, TextChangedEventArgs e) { if (lastInput == Links.Text) return; lastInput = Links.Text; resolved = null; var count = Links.Text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length; SetAction(count > 1 ? $"開始 {count} 個下載" : "檢查連結"); if (Files is not null) Files.Visibility = Visibility.Collapsed; }
+ private void InputChanged(object s, TextChangedEventArgs e) { if (lastInput == Links.Text) return; lastInput = Links.Text; InvalidateResolution(); }
+ private void InvalidateResolution() { resolved = null; var count = ConfigJson.Lines(Links.Text).Length; SetAction(count > 1 ? $"開始 {count} 個下載" : DirectDownload.IsChecked == true ? "開始下載" : "檢查連結"); Files.Visibility = Visibility.Collapsed; Preview.Text = ""; }
+ private void DirectChanged(object sender, RoutedEventArgs e) { if (Files is not null) InvalidateResolution(); }
+ private void CategoryChanged(object sender, SelectionChangedEventArgs e) { if (Category.SelectedItem is ComboBoxItem item) Destination.Text = (string)item.Tag; }
  private async void PickFolder(object s, RoutedEventArgs e)
  {
   var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, owner);
@@ -78,6 +89,7 @@ public sealed partial class DownloadForm : UserControl
   if (opts["extra"] is null) opts["extra"] = optionExtra;
   if (request["req"] is null) request["req"] = req;
   if (request["opts"] is null) request["opts"] = opts;
+  requestOptions.Apply(request);
   return request;
  }
  public async Task<bool> SubmitAsync()
@@ -95,9 +107,10 @@ public sealed partial class DownloadForm : UserControl
    if (links.Length > 1)
    {
     if (FileName.Text.Length > 0) throw new FormatException("批次下載請留空檔名，避免檔案名稱重複。");
-    foreach (var link in links) await core.SendAsync(HttpMethod.Post, "tasks", BuildRequest(link)); complete = true;
+    var requests = new JsonArray(links.Select(link => (JsonNode?)BuildRequest(link)).ToArray());
+    await core.SendAsync(HttpMethod.Post, "tasks/batch", new JsonObject { ["reqs"] = requests }); complete = true;
    }
-   else if (resolved is null)
+   else if (resolved is null && DirectDownload.IsChecked != true)
    {
     await InspectAsync(links[0]);
    }
@@ -105,14 +118,13 @@ public sealed partial class DownloadForm : UserControl
    {
     // Update resolution options if destination, file name or file selection changed after probing.
     var request = BuildRequest(links[0]);
-    request["opts"]!["selectFiles"] = new JsonArray(Files.SelectedItems.Cast<ResolvedFile>().Select(file => JsonValue.Create(file.Index) as JsonNode).ToArray());
-    if (Files.Items.Count > 1 && Files.SelectedItems.Count == 0) throw new FormatException("請至少選擇一個檔案。");
+    if (DirectDownload.IsChecked != true) { request["opts"]!["selectFiles"] = new JsonArray(Files.SelectedItems.Cast<ResolvedFile>().Select(file => JsonValue.Create(file.Index) as JsonNode).ToArray()); if (Files.Items.Count > 1 && Files.SelectedItems.Count == 0) throw new FormatException("請至少選擇一個檔案。"); }
     CreatedTaskId = (await core.SendAsync(HttpMethod.Post, "tasks", request))!.GetValue<string>(); complete = true;
    }
   }
   catch (Exception e) { ShowError(e); }
   finally { SetBusy(false); }
-  if (complete) { var prefs = UiPreferences.Load(); if (prefs.RememberDownloadDirectory) { prefs.LastDownloadDirectory = Destination.Text.Trim(); prefs.Save(); } }
+  if (complete) { var prefs = UiPreferences.Load(); if (prefs.RememberDownloadDirectory) prefs.LastDownloadDirectory = Destination.Text.Trim(); prefs.RecentLinks = linksForHistory().Concat(prefs.RecentLinks).Distinct().Take(30).ToList(); prefs.Save(); }
   return complete;
  }
  private async Task InspectAsync(string url)
@@ -127,15 +139,25 @@ public sealed partial class DownloadForm : UserControl
    var size = resource["size"]!.GetValue<long>();
    Preview.Text = compact ? $"大小：{(size > 0 ? DownloadItem.FormatBytes(size) : "由伺服器於下載時提供")}" : $"{displayName}\n{(size > 0 ? DownloadItem.FormatBytes(size) : "大小由伺服器於下載時提供")}";
    Files.Items.Clear(); var index = 0;
-   foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(new ResolvedFile(index++, Path.Combine(file!["path"]?.GetValue<string>() ?? "", file["name"]!.GetValue<string>())));
+   foreach (var file in resource["files"]!.AsArray()) Files.Items.Add(new ResolvedFile(index++, Path.Combine(file!["path"]?.GetValue<string>() ?? "", file["name"]!.GetValue<string>()), file["size"]!.GetValue<long>()));
    Files.SelectAll(); Files.Visibility = Files.Items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+   if (initial?["opts"]?["selectFiles"] is JsonArray selected && selected.Count > 0) { var indexes = selected.Select(x => x!.GetValue<int>()).ToHashSet(); foreach (var file in Files.SelectedItems.Cast<ResolvedFile>().ToList()) if (!indexes.Contains(file.Index)) Files.SelectedItems.Remove(file); }
    if (initial is not null && Files.Items.Count == 1 && FileName.Text.Length == 0) FileName.Text = displayName;
    SetAction("開始下載");
   }
   finally { Busy.IsActive = false; Busy.Visibility = Visibility.Collapsed; }
  }
- private void ShowError(Exception e) { Message.Message = e.Message; Message.IsOpen = true; }
+ private IEnumerable<string> linksForHistory() => ConfigJson.Lines(Links.Text).Where(x => !x.StartsWith("data:", StringComparison.OrdinalIgnoreCase));
+ private async void ShowRecent(object sender, RoutedEventArgs e)
+ {
+  var history = new ListView { ItemsSource = UiPreferences.Load().RecentLinks, MaxHeight = 340, SelectionMode = ListViewSelectionMode.Single };
+  var clear = new Button { Content = "清除最近使用的連結" }; clear.Click += (_, _) => { var prefs = UiPreferences.Load(); prefs.RecentLinks.Clear(); prefs.Save(); history.ItemsSource = prefs.RecentLinks; };
+  var dialog = new ContentDialog { Title = "最近使用的連結", Content = new StackPanel { Spacing = 12, Children = { history, clear } }, PrimaryButtonText = "使用連結", CloseButtonText = "取消", IsPrimaryButtonEnabled = false };
+  history.SelectionChanged += (_, _) => dialog.IsPrimaryButtonEnabled = history.SelectedItem is not null;
+  if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) Links.Text = (string)history.SelectedItem;
+ }
+ private void ShowError(Exception e) { Message.Message = UserError.Message(e); Message.IsOpen = true; }
  private void SetAction(string text) { ActionText = text; StateChanged?.Invoke(); }
  private void SetBusy(bool value) { IsBusy = value; Busy.IsActive = value; Busy.Visibility = value ? Visibility.Visible : Visibility.Collapsed; StateChanged?.Invoke(); }
- private sealed record ResolvedFile(int Index, string Name) { public override string ToString() => Name; }
+ private sealed record ResolvedFile(int Index, string Name, long Size) { public override string ToString() => $"{Name} · {DownloadItem.FormatBytes(Size)}"; }
 }

@@ -30,6 +30,7 @@ public sealed class CoreClient : IDisposable
             var exe = Path.Combine(AppContext.BaseDirectory, "Engine", "gopeed-core.exe");
             var start = new ProcessStartInfo(exe) { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = DataDirectory };
             start.ArgumentList.Add("--data"); start.ArgumentList.Add(DataDirectory);
+            start.ArgumentList.Add("--port"); start.ArgumentList.Add(UiPreferences.Load().ApiPort.ToString());
             start.ArgumentList.Add("--ui"); start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Gopeed.Native.exe"));
             start.ArgumentList.Add("--icon"); start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
             using var child = Process.Start(start)!;
@@ -60,8 +61,15 @@ public sealed class CoreClient : IDisposable
         using var response = await http.SendAsync(request);
         response.EnsureSuccessStatusCode();
         var result = JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
-        if (result["code"]!.GetValue<int>() != 0) throw new InvalidOperationException(result["msg"]!.GetValue<string>());
+        if (result["code"]!.GetValue<int>() != 0) throw new DownloadApiException(result["msg"]!.GetValue<string>());
         return result["data"]?.DeepClone();
+    }
+    public async Task<string> FetchTextAsync(string url)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "proxy");
+        request.Headers.Add("X-Target-Uri", url);
+        using var response = await http.SendAsync(request); response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
     }
 
     public async Task StopAsync()

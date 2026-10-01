@@ -37,9 +37,11 @@ Root: HKCU; Subkey: "Software\Classes\gopeed\shell\open\command"; ValueType: str
 Name: "desktopicon"; Description: "建立桌面捷徑"; Flags: unchecked
 
 [Run]
+Filename: "{app}\Gopeed.Native.exe"; Parameters: "--register-integrations"; Flags: runhidden waituntilterminated
 Filename: "{app}\Gopeed.Native.exe"; Description: "開啟 Gopeed Native"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
+Filename: "{app}\Gopeed.Native.exe"; Parameters: "--unregister-integrations"; Flags: runhidden waituntilterminated; RunOnceId: "RemoveNativeIntegration"
 Filename: "{app}\Engine\gopeed-core.exe"; Parameters: "--data ""{localappdata}\GopeedNative"" --shutdown"; Flags: runhidden waituntilterminated; RunOnceId: "StopNativeCore"
 
 [Code]

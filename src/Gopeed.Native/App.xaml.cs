@@ -58,6 +58,9 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
+        var commandLine = Environment.GetCommandLineArgs();
+        if (commandLine.Contains("--register-integrations")) { Services.WindowsIntegration.InstallBrowserHost(); Services.WindowsIntegration.RegisterFileTypes(); Exit(); return; }
+        if (commandLine.Contains("--unregister-integrations")) { Services.WindowsIntegration.Unregister(); Exit(); return; }
         var instance = AppInstance.FindOrRegisterForKey("GopeedNative.Main");
         if (!instance.IsCurrent)
         {
@@ -91,6 +94,10 @@ public partial class App : Application
                 Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs launch => Services.GopeedLink.FromCommandLine(launch.Arguments),
                 _ => null
             };
+            if (link is null && activation.Data is Windows.ApplicationModel.Activation.ILaunchActivatedEventArgs command && Services.DownloadSources.FromArguments(command.Arguments) is { } source)
+            {
+                OpenDownloadWindow(new System.Text.Json.Nodes.JsonObject { ["req"] = new System.Text.Json.Nodes.JsonObject { ["url"] = source } }); return;
+            }
             if (link is not null && Services.GopeedLink.Parse(link) is { Route: "create" } create)
             {
                 OpenDownloadWindow(create.Parameters ?? new System.Text.Json.Nodes.JsonObject()); return;

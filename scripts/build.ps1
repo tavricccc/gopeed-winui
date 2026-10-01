@@ -6,6 +6,8 @@ Push-Location (Join-Path $repo 'core')
 try {
     go build -trimpath -ldflags '-s -w -H=windowsgui -X github.com/GopeedLab/gopeed/pkg/base.Version=1.9.3' -o gopeed-core.exe .
     if ($LASTEXITCODE) { throw 'Go core build failed' }
+    go build -trimpath -ldflags '-s -w -H=windowsgui' -o gopeed-browser-host.exe ./cmd/browser-host
+    if ($LASTEXITCODE) { throw 'Browser host build failed' }
     if ($Test) { go test .; if ($LASTEXITCODE) { throw 'Core verification failed' } }
 } finally { Pop-Location }
 if ($Test) {

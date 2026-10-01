@@ -29,7 +29,7 @@ public sealed partial class MainPage : Page
   Unloaded += (_, _) => { timer.Stop(); ViewModel.Dispose(); };
   ViewModel.VisibleItems.CollectionChanged += (_, _) => EmptyState.Visibility = ViewModel.VisibleItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
   ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Error) && ViewModel.Error.Length > 0) { ErrorBar.Message = ViewModel.Error; ErrorBar.IsOpen = true; } };
-  ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Selected)) { SelectionDetails.Visibility = ViewModel.HasSelection ? Visibility.Visible : Visibility.Collapsed; DetailsHint.Visibility = ViewModel.HasSelection ? Visibility.Collapsed : Visibility.Visible; } };
+  ViewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ViewModel.Selected)) { SelectionDetails.Visibility = ViewModel.HasSingleSelection ? Visibility.Visible : Visibility.Collapsed; DetailsHint.Visibility = ViewModel.HasSingleSelection ? Visibility.Collapsed : Visibility.Visible; } };
   timer.Tick += async (_, _) => { if (refreshing || !ViewModel.IsConnected) return; refreshing = true; await ViewModel.RefreshAsync(); refreshing = false; };
  }
  private async void Start(object sender, RoutedEventArgs e) { Loaded -= Start; await ViewModel.InitializeAsync(); timer.Start(); ready.SetResult(); }
@@ -65,20 +65,22 @@ public sealed partial class MainPage : Page
  }
  private void FilterChanged(object s, SelectionChangedEventArgs e) { if (FilterBox?.SelectedItem is ComboBoxItem item) { ViewModel.Filter = item.Tag.ToString()!; ViewModel.ApplyFilter(); } }
  private void SearchChanged(AutoSuggestBox s, AutoSuggestBoxTextChangedEventArgs e) { ViewModel.Search = s.Text; ViewModel.ApplyFilter(); }
- private async void PauseSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) await ViewModel.ActAsync("pause", [item]); }
- private async void ResumeSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) await ViewModel.ActAsync("continue", [item]); }
+ private async void PauseSelected(object s, RoutedEventArgs e) => await ViewModel.ActAsync("pause", ViewModel.Selection.Where(x => x.CanPause));
+ private async void ResumeSelected(object s, RoutedEventArgs e) => await ViewModel.ActAsync("continue", ViewModel.Selection.Where(x => x.CanResume));
  private async void PauseAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("pause", ViewModel.VisibleItems.Where(i => i.CanPause));
  private async void ResumeAll(object s, RoutedEventArgs e) => await ViewModel.ActAsync("continue", ViewModel.VisibleItems.Where(i => i.CanResume));
  private async void RefreshClicked(object s, RoutedEventArgs e) => await ViewModel.RefreshAsync();
  private async void PrimarySelected(object s, RoutedEventArgs e)
  {
-  if (ViewModel.Selected is not { } item) return;
-  var action = DownloadPresentation.ForStatus(item.Status);
-  if (action.Key == "open") OpenSelected(s, e); else if (action.Key != "none") await ViewModel.ActAsync(action.Key, [item]);
+  var action = ViewModel.PrimaryActionKey;
+  if (action == "open") OpenSelected(s, e);
+  else if (action == "folder") { foreach (var folder in ViewModel.Selection.Select(x => x.Folder).Distinct()) FileActions.Open(folder); }
+  else if (action == "pause") await ViewModel.ActAsync(action, ViewModel.Selection.Where(x => x.CanPause));
+  else if (action == "continue") await ViewModel.ActAsync(action, ViewModel.Selection.Where(x => x.CanResume));
  }
  private void OpenSelected(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { IsComplete: true } item) FileActions.Open(item.FilePath); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
  private void OpenFolder(object s, RoutedEventArgs e) { try { if (ViewModel.Selected is { } item) FileActions.Reveal(item.FilePath, item.Folder); } catch (Exception ex) { ViewModel.Error = ex.Message; } }
- private void CopySelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) FileActions.Copy(item.Url); }
+ private void CopySelected(object s, RoutedEventArgs e) => FileActions.Copy(string.Join("\n", ViewModel.Selection.Select(x => x.Url)));
  private async void PasteDownload(object s, RoutedEventArgs e)
  {
   try { var content = Clipboard.GetContent(); if (!content.Contains(StandardDataFormats.Text)) throw new FormatException("剪貼簿沒有文字連結。"); await AddText(await content.GetTextAsync()); }
@@ -87,7 +89,7 @@ public sealed partial class MainPage : Page
  private async Task AddText(string text)
  {
   var links = text.Split(['\r','\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-  if (links.Length == 0 || links.Any(link => !Uri.TryCreate(link, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https" or "magnet" or "file"))) throw new FormatException("請貼上 HTTP、HTTPS 或磁力下載連結。");
+  if (links.Length == 0 || links.Any(link => !Uri.TryCreate(link, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https" or "magnet" or "ed2k" or "file"))) throw new FormatException("請貼上 HTTP、HTTPS、磁力或 eD2k 下載連結。");
   await AddDownloadAsync(new System.Text.Json.Nodes.JsonObject { ["req"] = new System.Text.Json.Nodes.JsonObject { ["url"] = string.Join("\n", links) } });
  }
  private void DownloadDragOver(object s, DragEventArgs e) { e.AcceptedOperation = e.DataView.Contains(StandardDataFormats.Text) || e.DataView.Contains(StandardDataFormats.WebLink) || e.DataView.Contains(StandardDataFormats.StorageItems) ? DataPackageOperation.Copy : DataPackageOperation.None; }
@@ -112,18 +114,15 @@ public sealed partial class MainPage : Page
   try { if (parameters is not null) await AddDownloadAsync(parameters); else if (text is not null) await AddText(text); }
   catch (Exception ex) { ViewModel.Error = ex.Message; }
  }
- private async void DeleteSelected(object s, RoutedEventArgs e) { if (ViewModel.Selected is { } item) await DeleteAsync(item); }
+ private async void DeleteSelected(object s, RoutedEventArgs e) => await DeleteItemsAsync(ViewModel.Selection);
  private async Task DeleteAsync(DownloadItem item)
  {
-  var files = new CheckBox { Content = "同時刪除已下載的檔案" };
-  var dialog = new ContentDialog { Title = "移除下載？", Content = new StackPanel { Spacing = 12, Children = { new TextBlock { Text = item.Name, TextWrapping = TextWrapping.Wrap }, files } }, PrimaryButtonText = "移除", CloseButtonText = "取消", DefaultButton = ContentDialogButton.Close, XamlRoot = XamlRoot };
-  if (await NativeDialogs.ShowAsync(dialog, XamlRoot) == ContentDialogResult.Primary) await ViewModel.ActAsync("delete", [item], files.IsChecked == true);
+  await DeleteItemsAsync([item]);
  }
  private async void ShowDetails(object s, RoutedEventArgs e)
  {
   if (ViewModel.Selected is not { } item) return;
-  var text = new TextBlock { Text = $"{item.Name}\n\n{item.StatusText} · {item.Protocol}\n{item.TransferText}\n速度：{item.SpeedText}\n剩餘時間：{item.RemainingText}\n\n儲存位置\n{item.FilePath}\n\n來源\n{item.Url}", TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true };
-  await NativeDialogs.ShowAsync(new ContentDialog { Title = "下載詳細資訊", Content = new ScrollViewer { Content = text, MaxHeight = 450 }, CloseButtonText = "關閉" }, XamlRoot);
+  await NativeDialogs.ShowAsync(new TaskDetailsDialog(ViewModel.Core, item), XamlRoot);
  }
  private void ListDoubleTapped(object s, DoubleTappedRoutedEventArgs e) { if (ViewModel.Selected?.IsComplete == true) OpenSelected(s, new()); else ShowDetails(s, new()); }
  private DownloadItem? ContextItem(object s) => ViewModel.VisibleItems.FirstOrDefault(i => i.Id == (s as MenuFlyoutItem)?.Tag?.ToString());
@@ -147,6 +146,6 @@ public sealed partial class MainPage : Page
   var downloads = !e.IsSettingsSelected && (e.SelectedItem as NavigationViewItem)?.Tag?.ToString() != "extensions";
   DownloadsSurface.Visibility = downloads ? Visibility.Visible : Visibility.Collapsed;
   SettingsFrame.Visibility = downloads ? Visibility.Collapsed : Visibility.Visible;
-  if (!downloads) SettingsFrame.Content = e.IsSettingsSelected ? new SettingsPage(ViewModel) : new ExtensionsPage(ViewModel);
+  if (!downloads && ViewModel.IsConnected) SettingsFrame.Content = e.IsSettingsSelected ? new SettingsPage(ViewModel) : new ExtensionsPage(ViewModel);
  }
 }

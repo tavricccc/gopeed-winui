@@ -11,7 +11,12 @@ public sealed class DownloadItem : ObservableObject
     public DownloadItem(JsonObject data) { Id = data["id"]!.GetValue<string>(); Data = data; }
     public string Name => Data["name"]!.GetValue<string>();
     public string Status => Data["status"]!.GetValue<string>();
-    public string StatusText => Status switch { "running" => "下載中", "done" => Data["uploading"]?.GetValue<bool>() == true ? "做種中" : "已完成", "pause" => "已暫停", "error" => "下載失敗", "wait" => "等待中", _ => "準備中" };
+    public string ExtractionStatus => Data["progress"]?["extractStatus"]?.GetValue<string>() ?? "";
+    public string ExtractionText => ExtractionStatus switch { "extracting" => $"解壓縮中 {Data["progress"]?["extractProgress"]}%", "waitingParts" => "等待壓縮檔分卷", "error" => "解壓縮失敗", "done" => "已解壓縮", _ => "" };
+    public bool IsProcessing => ExtractionStatus is "extracting" or "waitingParts";
+    public bool Uploading => Data["uploading"]?.GetValue<bool>() == true;
+    public string StatusText => IsProcessing ? ExtractionText : Status switch { "running" => "下載中", "done" => Uploading ? "做種中" : "已完成", "pause" => "已暫停", "error" => "下載失敗", "wait" => "等待中", _ => "準備中" };
+    public DateTimeOffset CreatedAt => DateTimeOffset.Parse(Data["createdAt"]!.GetValue<string>());
     public string Url => Data["meta"]?["req"]?["url"]?.GetValue<string>() ?? "";
     public string Folder => Data["meta"]?["opts"]?["path"]?.GetValue<string>() ?? "";
     public string Protocol => Data["protocol"]?.GetValue<string>().ToUpperInvariant() ?? "";
@@ -24,12 +29,15 @@ public sealed class DownloadItem : ObservableObject
     public bool CanResume => Status is "pause" or "error";
     public bool IsComplete => Status == "done";
     public string SizeText => Size > 0 ? FormatBytes(Size) : "大小未知";
-    public string TransferText => $"{FormatBytes(Downloaded)} / {SizeText}";
-    public string SpeedText => Status == "running" ? FormatBytes(Speed) + "/s" : "—";
+    public string TransferText => $"{FormatBytes(Downloaded)} / {SizeText}" + (ExtractionText.Length > 0 ? $" · {ExtractionText}" : "");
+    public long Uploaded => Data["progress"]?["uploaded"]?.GetValue<long>() ?? 0;
+    public long UploadSpeed => Data["progress"]?["uploadSpeed"]?.GetValue<long>() ?? 0;
+    public string SpeedText => Status == "running" ? FormatBytes(Speed) + "/s" : Uploading ? "↑ " + FormatBytes(UploadSpeed) + "/s" : "—";
     public string RemainingText => Status == "running" && Speed > 0 && Size > Downloaded ? FormatTime((Size - Downloaded) / Speed) : "—";
     public string PrimaryActionLabel => DownloadPresentation.ForStatus(Status).Label;
     public string PrimaryActionGlyph => DownloadPresentation.ForStatus(Status).Glyph;
-    public string FileGlyph => DownloadPresentation.FileGlyph(Name);
+    public string FileGlyph => Data["meta"]?["res"]?["name"]?.GetValue<string>() is { Length: > 0 } ? "\uE8B7" : DownloadPresentation.FileGlyph(Name);
+    public bool CanEditSource => Protocol == "HTTP" && Status is "pause" or "error";
     public bool CanAct => DownloadPresentation.ForStatus(Status).Key != "none";
     public string FilePath
     {

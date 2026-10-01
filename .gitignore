@@ -6,3 +6,4 @@ work/
 *.pfx
 *.cer
 core/gopeed-core.exe
+core/gopeed-browser-host.exe
