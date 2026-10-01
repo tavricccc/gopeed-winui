@@ -27,7 +27,7 @@ public sealed partial class DownloadForm : UserControl
   OptionsSurface.Children.Add(requestOptions);
   requestOptions.RequestChanged += InvalidateResolution;
   Headers.TextChanged += (_, _) => InvalidateResolution();
-  if (compact) { Links.Header = "來源網址"; Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; RecentLinksButton.Visibility = Visibility.Collapsed; FileName.Header = "檔名"; ((Panel)DirectDownload.Parent).Children.Remove(DirectDownload); OptionsSurface.Children.Insert(0, DirectDownload); }
+  if (compact) { Links.Header = "來源網址"; Links.AcceptsReturn = false; Links.TextWrapping = TextWrapping.NoWrap; Links.MinHeight = 0; Links.MaxHeight = double.PositiveInfinity; TorrentPickerButton.Visibility = Visibility.Collapsed; RecentLinksButton.Visibility = Visibility.Collapsed; FileName.Header = "檔名"; }
   Loaded += InitializeForm;
  }
  private async void InitializeForm(object sender, RoutedEventArgs e)
